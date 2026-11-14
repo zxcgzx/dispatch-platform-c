@@ -6,7 +6,7 @@
   - s 按 op_id 和给出的参数匹配；
   - 标了 must_fail 的用例，M4 报出对应错误才算对。
 报告：总体与按 L1–L4 分组的准确率、Δπ 的精确率与召回率、疑似幻觉数（W501 加 E101）、平均耗时；可导出 Markdown 和 CSV。
-ProOPF 用求解目标值判对错；这里求解是黑盒，先做规格级比对，“目标值比对”等求解接入后再做（待开发）。
+最终以求解目标值判对错；这里求解是黑盒，先做规格级比对，“目标值比对”等求解接入后再做（待开发）。
 """
 from __future__ import annotations
 
@@ -192,7 +192,7 @@ def build_report(name: str, engine_id: str, results: list[dict]) -> dict:
         "hallucinations": sum(r.get("hallucination", 0) for r in results),
         "avg_ms": (sum(r["elapsed_ms"] for r in results) / n) if n else None,
         "errors": sum(1 for r in results if r.get("error")),
-        "objective_compare": "待开发：目标值比对等求解接入后再做（ProOPF 用求解目标值判对错）",
+        "objective_compare": "待开发：目标值比对等求解接入后再做（以求解目标值判对错）",
         "rules": "层级按程序判级；Δπ 按 target / param / operation 或 direction / value（相对误差 ≤ 1%）/ periods 匹配；s 按 op_id 与参数匹配；must_fail 要报出对应错误",
     }
 

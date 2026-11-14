@@ -7,6 +7,7 @@ export interface SolveResult {
   timings_s: { read?: number | null; build?: number | null; solve?: number | null; n1_check?: number | null }
   branch_status?: Record<string, number[]>
   gen_p?: Record<string, number[]>
+  gen_u?: Record<string, number[]>
   bus_vm?: Record<string, number[]>
   branch_flow?: Record<string, { pf?: number[]; qf?: number[]; pt?: number[]; qt?: number[] }>
   messages: string[]

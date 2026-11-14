@@ -159,7 +159,7 @@ function fmt(n: number | undefined) { return n === undefined ? '—' : n.toLocal
   <div v-if="local" class="spec" data-testid="spec-editor">
     <!-- ω -->
     <section class="card card-pad">
-      <div class="card-title">基础模型 ω <span class="sub">N−1 是 ω 的默认设置（任务书要求），s 只放 ω 之外的扩展</span></div>
+      <div class="card-title">基础模型 ω <span class="sub">N−1 是 ω 的默认设置（默认开启），s 只放 ω 之外的扩展</span></div>
       <div class="omega">
         <label>系统<el-input v-model="local.omega.system" size="small" disabled /></label>
         <label>问题类型

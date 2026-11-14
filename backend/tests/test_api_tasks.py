@@ -43,7 +43,7 @@ def test_meta_and_engines():
     assert ids["demo"]["selectable"]
     assert not ids["external"]["selectable"] and not ids["proopf"]["selectable"] and not ids["t2llm"]["selectable"]
     assert "接口预留" in ids["external"]["label"]
-    assert {t["label"] for t in m["templates"]} == {"检修", "高温限额下降", "负荷增长", "开关次数限制", "断面限额"}
+    assert {t["label"] for t in m["templates"]} == {"检修", "高温限额下降", "负荷增长", "开关次数限制", "断面限额", "机组启停", "经济性目标"}
     assert m["whitelist"]["branch"]["RATE_A"]["ops"] == ["scale", "set"]
 
 

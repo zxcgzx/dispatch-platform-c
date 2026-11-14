@@ -24,6 +24,16 @@ const amount = ref<number | null>(null)
 const nMinus1 = ref(false)
 const fewSwitch = ref(false)
 const swLimit = ref<number | null>(null)
+const goals = ref<string[]>([])
+const ucLimit = ref<number | null>(null)
+const goalOpts = [
+  { v: 'econ', label: '经济性', text: '考虑发电成本' },
+  { v: 'rel', label: '可靠性', text: '考虑可靠性' },
+  { v: 'ren', label: '新能源消纳', text: '考虑新能源消纳' },
+  { v: 'loss', label: '网损最小', text: '网损尽量小' },
+  { v: 'volt', label: '电压偏差', text: '考虑电压偏差' },
+  { v: 'redis', label: '机组出力调整', text: '机组出力调整' },
+]
 
 // 动作模板：text 里的 {o} 是对象，{n} 是数值
 const actions: Record<string, { key: string; label: string; tpl: string; unit?: string; need?: boolean; def?: number }[]> = {
@@ -76,6 +86,8 @@ const finalText = computed(() => {
   if (nMinus1.value) parts.push('要求满足 N−1')
   if (fewSwitch.value) parts.push('尽量少动开关')
   if (swLimit.value) parts.push(`开关操作不超过 ${swLimit.value} 次`)
+  if (ucLimit.value) parts.push(`机组启停不超过 ${ucLimit.value} 次`)
+  goalOpts.filter((g) => goals.value.includes(g.v)).forEach((g) => parts.push(g.text))
   return parts.length ? parts.join('，') + '。' : ''
 })
 const needAmount = computed(() => !!act.value?.need)
@@ -86,7 +98,7 @@ function apply(send: boolean) {
   emit('apply', finalText.value, send)
 }
 function reset() {
-  target.value = ''; action.value = ''; amount.value = null; nMinus1.value = false; fewSwitch.value = false; swLimit.value = null
+  target.value = ''; action.value = ''; amount.value = null; nMinus1.value = false; fewSwitch.value = false; swLimit.value = null; goals.value = []; ucLimit.value = null
 }
 </script>
 
@@ -124,6 +136,14 @@ function reset() {
       <el-checkbox v-model="fewSwitch" size="small" data-testid="b-few">尽量少动开关</el-checkbox>
       <span class="sw">开关操作不超过
         <el-select v-model="swLimit" size="small" clearable placeholder="不限" style="width: 76px" data-testid="b-swlimit"><el-option v-for="k in [1, 2, 3, 5]" :key="k" :value="k" :label="`${k} 次`" /></el-select></span>
+    </div>
+    <div class="row1">
+      <span class="lab">4 目标与机组</span>
+      <el-checkbox-group v-model="goals" size="small" data-testid="b-goals">
+        <el-checkbox v-for="g in goalOpts" :key="g.v" :value="g.v" :data-goal="g.v">{{ g.label }}</el-checkbox>
+      </el-checkbox-group>
+      <span class="sw">机组启停不超过
+        <el-select v-model="ucLimit" size="small" clearable placeholder="不启停" style="width: 86px" data-testid="b-uclimit"><el-option v-for="k in [1, 2, 3, 5]" :key="k" :value="k" :label="`${k} 次`" /></el-select></span>
     </div>
     <div class="out">
       <div class="prev" :class="{ empty: !ready }" data-testid="b-preview">

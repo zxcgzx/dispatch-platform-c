@@ -248,10 +248,10 @@ if with_n1 and omega.get("n_minus_1", True):
 
 
 def _objective_block() -> str:
-    body = '''# 基础目标（占位，待确认）：数据里没有发电成本，暂用“偏离当前方式最小”，P^{G,0}_g 取断面 PG
+    body = '''# 基础目标：断面里没有发电成本，取“偏离当前方式最小”，P^{G,0}_g 取断面 PG
 _pg0 = {g: D["gen"][g]["pg0"] / base_mva for g in GENS}
 obj_terms.append(sum((m.pg[g, t] - _pg0[g]) ** 2 for g in m.G for t in m.T))'''
-    return _wrap("OBJ", "目标（占位，待确认）", body, "[待确认]")
+    return _wrap("OBJ", "目标（偏离当前方式最小）", body)
 
 
 def _final_objective_block() -> str:

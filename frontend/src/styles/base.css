@@ -48,3 +48,9 @@ h1, h2, h3, h4 { margin: 0; font-weight: 600; }
 /* 原文高亮 */
 mark.hl { background: var(--c-focus); color: inherit; padding: 0 1px; border-radius: 2px; }
 mark.hl-ent { background: var(--c-primary-bg); border-bottom: 2px solid var(--c-primary); }
+
+/* 状态灯：已接入 / 本地模拟 / 未接入 */
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--c-faint); }
+.dot.connected { background: var(--c-success); }
+.dot.mock { background: var(--c-infer-line); }
+.dot.none { background: transparent; border: 1.5px solid var(--c-faint); }

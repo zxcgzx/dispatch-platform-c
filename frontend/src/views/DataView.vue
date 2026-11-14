@@ -57,7 +57,7 @@ const sw = computed(() => facts.value?.switchable_counts ?? {})
             </tbody>
           </table>
           <p v-if="app.window?.single_snapshot" class="sub" style="margin-top: 8px">
-            断面库只有 1 个文件：工作台按“单断面演示模式”复制成 16 个时段。
+            断面库只有 1 个文件：按 1 个时段建模；放入多个不同时刻的断面后，按时刻组成多时段窗口。
           </p>
         </div>
 
@@ -186,8 +186,4 @@ const sw = computed(() => facts.value?.switchable_counts ?? {})
 .chip { display: inline-block; background: var(--c-surface-2); border-radius: 10px; padding: 0 8px; margin: 1px 4px 1px 0; font-size: var(--fs-xs); }
 .ex { font-size: var(--fs-xs); margin-top: 2px; word-break: break-all; }
 .pre { white-space: pre-wrap; word-break: break-all; }
-.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--c-faint); }
-.dot.connected { background: var(--c-success); }
-.dot.mock { background: var(--c-infer-line); }
-.dot.none { background: transparent; border: 1.5px solid var(--c-faint); }
 </style>

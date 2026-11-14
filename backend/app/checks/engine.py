@@ -381,7 +381,9 @@ def layer5(spec: ModelSpec, ctx: CheckContext) -> list[Finding]:
                 miss("检修停运", k.text, "补一条 BR_STATUS / GEN_STATUS 置 0")
         elif k.role == "structural":
             want = {"switching_penalty": "switching_penalty", "loss_min": "loss_min", "voltage_deviation": "voltage_deviation",
-                    "section_limit": "section_limit", "fixed_topology": "multi_period_acopf"}.get(k.rule_id or "")
+                    "section_limit": "section_limit", "fixed_topology": "multi_period_acopf", "generator_redispatch": "generator_redispatch",
+                    "unit_commitment": "unit_commitment", "cost_economic": "cost_economic", "reliability_nm1": "reliability_nm1",
+                    "renewable_accommodation": "renewable_accommodation"}.get(k.rule_id or "")
             covered = (want in ops_in_spec) or (want == "multi_period_acopf" and spec.omega.problem == "multi_period_acopf")
             if want and not covered:
                 miss("结构要求", k.text, f"补一个结构算子 {want}")

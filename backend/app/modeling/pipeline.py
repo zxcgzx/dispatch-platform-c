@@ -64,7 +64,7 @@ def engine_options() -> list[dict[str, Any]]:
          "note": "离线，不依赖任何大模型"},
         {"id": "openai", "label": "本地 Qwen（OpenAI 兼容）", "selectable": True, "configured": llm_ok, "feature": "m1.model_select",
          "note": "已配置" if llm_ok else "未配置 LLM_BASE_URL（.env 里设 LLM_MODE=openai）：可以选，连不上时自动回落到演示规则引擎并提示"},
-        {"id": "proopf", "label": "ProOPF 微调模型（接口预留）", "selectable": False, "configured": False, "feature": "m1.llm_proopf",
+        {"id": "proopf", "label": "微调模型（接口预留）", "selectable": False, "configured": False, "feature": "m1.llm_proopf",
          "note": "接口预留：微调模型部署成 OpenAI 兼容接口后，改 LLM_BASE_URL / LLM_MODEL 即可使用"},
         {"id": "t2llm", "label": "课题 2 大模型（接口预留）", "selectable": False, "configured": False, "feature": "m1.llm_t2",
          "note": "接口预留：待课题 2 提供接口"},

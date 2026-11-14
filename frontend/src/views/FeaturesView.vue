@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 功能清单：按 M1–M9 列出课题 4 的全部功能和状态，供老师审查。数据来自功能登记表（features.ts / /api/features）。
+// 功能清单：按模块列出全部功能和状态。数据来自功能登记表（features.ts / /api/features）。
 import { computed } from 'vue'
 import { featureTable, type Feature, type FeatureStatus } from '@/features'
 import { useAppStore } from '@/stores/app'
@@ -23,7 +23,7 @@ const summary = computed(() => {
 <template>
   <div class="page">
     <h2>功能清单</h2>
-    <p class="sub">按 M1–M9 列出课题 4 的全部功能。状态唯一来源是功能登记表（后端 <code>/api/features</code> 与前端 <code>features.ts</code> 同源），界面上所有按钮、标签页、卡片的状态徽标都从这里取。</p>
+    <p class="sub">按模块列出全部功能，每项标注：已实现、黑盒、接口预留或待开发。</p>
     <div class="row sums" data-testid="feature-summary">
       <div v-for="x in summary" :key="x.s" class="sum card"><StatusBadge :status="x.s" /><b>{{ x.n }}</b> 项</div>
     </div>

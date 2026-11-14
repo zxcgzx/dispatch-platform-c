@@ -15,7 +15,7 @@ AFFECTS: dict[tuple[str, str], list[str]] = {
     ("gen", "PMAX"): ["B6"], ("gen", "PMIN"): ["B6"], ("gen", "GEN_STATUS"): ["B6"],
     ("branch", "RATE_A"): ["B4"], ("branch", "BR_STATUS"): ["B3", "B7"],
 }
-STRUCT_AFFECTS = {"multi_period_acopf": ["B3", "B7"]}
+STRUCT_AFFECTS = {"multi_period_acopf": ["B3", "B7"], "generator_redispatch": ["B6"], "unit_commitment": ["B6"]}
 
 
 def periods_text(periods: list[int], n: int) -> str:
@@ -155,6 +155,17 @@ def s_zh(op: StructuralOp) -> str:
         return f"目标中加入{name}，系数 β = {b if b is not None else '未给（用配置默认值）'}"
     if op.op_id == "multi_period_acopf":
         return "固定拓扑（不开断）"
+    if op.op_id == "generator_redispatch":
+        r = p.get("ramp_pct")
+        return "机组出力作为决策变量再调度" + (f"，爬坡不超过 {r:g}% PMAX / 时段" if r is not None else "（不限爬坡）")
+    if op.op_id == "unit_commitment":
+        return f"机组启停作为 0-1 变量，全部时段启停总次数不超过 {p.get('max_switch', '?')} 次"
+    if op.op_id == "cost_economic":
+        return f"目标加发电成本，单价 {p.get('unit_cost', '?')} 元/MWh"
+    if op.op_id == "reliability_nm1":
+        return f"目标加失负荷代价，{p.get('penalty', '?')} 元/MWh"
+    if op.op_id == "renewable_accommodation":
+        return f"目标加新能源弃电惩罚，{p.get('penalty', '?')} 元/MWh（断面里没有新能源机组标注，暂不起作用）"
     return f"自定义结构修改 {op.op_id}（待审）"
 
 

@@ -14,10 +14,11 @@ onMounted(() => app.init())
 const menus = [
   { path: '/workbench', label: '建模工作台' },
   { path: '/map', label: '地图' },
+  { path: '/cross', label: '跨课题接口' },
   { path: '/benchmark', label: '交流基准' },
   { path: '/measure', label: '测点转换' },
   { path: '/testmode', label: '测评模式' },
-  { path: '/decompose', label: '问题分解与多智能体' },
+  { path: '/decompose', label: '聚合与分解' },
   { path: '/data', label: '数据与接口' },
   { path: '/features', label: '功能清单' },
 ]
@@ -80,10 +81,6 @@ const lamps = computed(() => {
 .item.active { background: var(--c-primary-bg); color: var(--c-primary-ink); font-weight: 600; }
 .lamps { display: flex; gap: 14px; align-items: center; font-size: 11.5px; color: var(--c-muted); }
 .lamp { display: inline-flex; align-items: center; gap: 4px; cursor: default; white-space: nowrap; }
-.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: var(--c-faint); }
-.dot.connected { background: var(--c-success); }
-.dot.mock { background: var(--c-infer-line); }
-.dot.none { background: transparent; border: 1.5px solid var(--c-faint); }
 .lamp-warn { color: var(--c-danger); }
 .logos { display: flex; align-items: center; gap: 18px; flex: none; }
 .lg { display: block; object-fit: contain; flex: none; }

@@ -55,6 +55,17 @@ structural_rules:
     keywords: [电压偏差, 电压质量]
   fixed_topology:
     keywords: [不开断, 固定拓扑, 不允许开断, 不改变拓扑]
+  generator_redispatch:
+    keywords: [机组出力调整, 调整机组出力, 重新分配出力, 机组再调度, 出力再调度]
+  unit_commitment:
+    keywords: [机组启停, 启停机组, 开停机, 机组组合]
+    pattern: 启停.{0,6}?不超过\s*(\d+)\s*次
+  cost_economic:
+    keywords: [发电成本, 经济性, 成本最小, 成本最低]
+  reliability_nm1:
+    keywords: [可靠性, 失负荷, 少切负荷]
+  renewable_accommodation:
+    keywords: [新能源消纳, 消纳率, 减少弃风, 减少弃光, 弃风弃光]
 
 # N-1
 n_minus_1:

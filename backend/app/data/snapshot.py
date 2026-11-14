@@ -101,6 +101,14 @@ class Snapshot:
     def bus_kv(self) -> dict[int, float]:
         return {int(b): float(k) for b, k in zip(self.bus["BUS_I"], self.bus["BASE_KV"])}
 
+    def rate_mva(self):
+        """支路热稳限额，MVA。断面里的 RATE_A 是额定电流（A），按首端电压折算：S = √3·kV·I / 1000；0 表示不限。"""
+        import numpy as np
+
+        kv = self.bus_kv()
+        f = np.array([kv.get(int(b), 0.0) for b in self.branch["F_BUS"]])
+        return self.branch["RATE_A"].to_numpy(dtype=float) * np.sqrt(3.0) * f / 1000.0
+
     def branch_label(self, row: int) -> str:
         """显示名，如 L155（174–172，220kV）。"""
         r = self.branch.iloc[row - 1]

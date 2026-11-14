@@ -76,7 +76,7 @@ export interface SnapshotRef {
   single_snapshot: SingleSnapshot;
 }
 /**
- * 基础模型 ω。N−1 是 ω 的默认设置（任务书要求），s 只放 ω 之外的扩展。
+ * 基础模型 ω。N−1 是 ω 的默认设置（默认开启），s 只放 ω 之外的扩展。
  */
 export interface BaseModelDef {
   system: System1;
@@ -107,7 +107,7 @@ export interface DeltaPi1 {
   origin: Origin;
 }
 /**
- * 结构修改 s。kind 对应 ProOPF 的 sp / sc / so。
+ * 结构修改 s。kind：problem 问题类型 / constraint 约束 / objective 目标项。
  */
 export interface StructuralOp {
   id: Id1;

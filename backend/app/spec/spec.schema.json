@@ -2,7 +2,7 @@
   "$defs": {
     "BaseModelDef": {
       "additionalProperties": false,
-      "description": "基础模型 ω。N−1 是 ω 的默认设置（任务书要求），s 只放 ω 之外的扩展。",
+      "description": "基础模型 ω。N−1 是 ω 的默认设置（默认开启），s 只放 ω 之外的扩展。",
       "properties": {
         "system": {
           "default": "dali_905",
@@ -338,7 +338,7 @@
     },
     "StructuralOp": {
       "additionalProperties": false,
-      "description": "结构修改 s。kind 对应 ProOPF 的 sp / sc / so。",
+      "description": "结构修改 s。kind：problem 问题类型 / constraint 约束 / objective 目标项。",
       "properties": {
         "id": {
           "title": "Id",

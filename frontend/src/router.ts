@@ -8,10 +8,11 @@ const router = createRouter({
     // 嵌入路由：隐藏顶部导航，只保留工作台，便于 iframe 嵌进宿主平台
     { path: '/embed/workbench', name: 'embed', component: () => import('./views/WorkbenchView.vue'), meta: { embed: true, title: '建模工作台' } },
     { path: '/map', name: 'map', component: () => import('./views/MapView.vue'), meta: { title: '地图' } },
+    { path: '/cross', name: 'cross', component: () => import('./views/CrossView.vue'), meta: { title: '跨课题接口' } },
     { path: '/benchmark', name: 'benchmark', component: () => import('./views/BenchmarkView.vue'), meta: { title: '交流基准' } },
     { path: '/measure', name: 'measure', component: () => import('./views/MeasureView.vue'), meta: { title: '测点转换' } },
     { path: '/testmode', name: 'testmode', component: () => import('./views/TestModeView.vue'), meta: { title: '测评模式' } },
-    { path: '/decompose', name: 'decompose', component: () => import('./views/DecomposeView.vue'), meta: { title: '问题分解与多智能体' } },
+    { path: '/decompose', name: 'decompose', component: () => import('./views/DecomposeView.vue'), meta: { title: '聚合与分解' } },
     { path: '/data', name: 'data', component: () => import('./views/DataView.vue'), meta: { title: '数据与接口' } },
     { path: '/features', name: 'features', component: () => import('./views/FeaturesView.vue'), meta: { title: '功能清单' } },
     { path: '/:pathMatch(.*)*', redirect: '/workbench' },

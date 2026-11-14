@@ -15,6 +15,8 @@ import SpecEditor from '@/components/SpecEditor.vue'
 import FormulaView from '@/components/FormulaView.vue'
 import CodeView from '@/components/CodeView.vue'
 import CheckView from '@/components/CheckView.vue'
+import TripleView from '@/components/TripleView.vue'
+import DynamicPanel from '@/components/DynamicPanel.vue'
 import VersionBar from '@/components/VersionBar.vue'
 import DataDrawer from '@/components/DataDrawer.vue'
 import SolvePanel from '@/components/SolvePanel.vue'
@@ -32,6 +34,10 @@ const running = ref(false)
 
 onMounted(async () => {
   await Promise.all([app.init(), t.loadMeta()])
+  const tid = route.query.task as string | undefined
+  if (tid && !t.state) {
+    try { await t.openTask(tid) } catch { ElMessage.error('没有找到这个任务') }
+  }
 })
 
 const engineValue = computed({
@@ -81,6 +87,7 @@ async function runScenario(sc: any, full = true) {
   }
 }
 function newTask() { t.reset() }
+function negotiateFirst() { t.step = 7 }
 
 // ---- 主按钮（跟随步骤）
 const primary = computed(() => {
@@ -163,6 +170,8 @@ const primary = computed(() => {
         <template v-else-if="stepsRight === 'tabs'">
           <el-tabs v-model="t.tab" data-testid="main-tabs">
             <el-tab-pane label="规格" name="spec"><SpecEditor /></el-tab-pane>
+            <el-tab-pane label="三栏对照" name="triple"><TripleView /></el-tab-pane>
+            <el-tab-pane label="动态建模" name="dynamic"><DynamicPanel /></el-tab-pane>
             <el-tab-pane label="公式" name="formula"><FormulaView /></el-tab-pane>
             <el-tab-pane label="代码" name="code"><CodeView /></el-tab-pane>
             <el-tab-pane label="校验" name="check"><CheckView /></el-tab-pane>
@@ -177,6 +186,7 @@ const primary = computed(() => {
           <span v-if="t.step === 4 && t.report?.has_error" class="lv-error">校验有错误，不能求解：请回到“规格”修正。</span>
           <span v-else-if="t.step === 4 && t.report?.has_warning" class="lv-warn">有警告：确认无误后继续。</span>
           <span class="grow" />
+          <el-button v-if="(t.step === 3 || t.step === 4) && canNext" size="large" data-testid="negotiate-first" @click="negotiateFirst">先协商，不求解 →</el-button>
           <el-button type="primary" size="large" :disabled="primary.disabled || running" :loading="running" data-testid="primary-btn" @click="primary.go">{{ primary.text }}</el-button>
         </div>
       </section>

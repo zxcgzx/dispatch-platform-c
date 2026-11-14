@@ -8,9 +8,12 @@ from app.metrics import indicators as ind
 def test_loading_matches_hand_calc(snap, topo):
     rho = ind.branch_loading(snap)
     br = snap.branch
-    i = 154                                                    # L155：RATE_A = 800
-    exp = max(np.hypot(br.PF[i], br.QF[i]), np.hypot(br.PT[i], br.QT[i])) / br.RATE_A[i]
+    i = 154                                                    # L155：RATE_A 是额定电流 A，折成 MVA = √3·kV·I/1000
+    kv = snap.bus_kv()[int(br.F_BUS[i])]
+    rate_mva = np.sqrt(3) * kv * br.RATE_A[i] / 1000
+    exp = max(np.hypot(br.PF[i], br.QF[i]), np.hypot(br.PT[i], br.QT[i])) / rate_mva
     assert rho[i] == pytest.approx(exp)
+    assert snap.rate_mva()[i] == pytest.approx(rate_mva)
     assert np.isnan(rho[237]) and np.isnan(rho[418])          # RATE_A = 0 视为不限，不计算
     assert int(np.isnan(rho).sum()) == 5
 
@@ -156,7 +159,7 @@ def test_island_dfs_matches_per_branch_recompute(topo):
 
 
 def test_n1_screening_detects_violation_when_rate_tight(snap, topo):
-    rate = snap.branch.RATE_A.to_numpy(dtype=float) * 0.05     # 把限额压到 5%：必然大面积不通过
+    rate = snap.rate_mva() * 0.05                             # 把限额压到 5%：必然大面积不通过
     r = ind.n1_screening(snap, topo, rate=rate)
     assert r["failed_count"] > 0 and r["pass_rate"] < 1
     assert r["failed"][0]["worst_rho"] > 1 and r["frequent_violated"]

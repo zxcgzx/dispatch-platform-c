@@ -36,7 +36,7 @@ function jumpSpec(id: string) {
 
     <section class="card card-pad">
       <div class="card-title">目标
-        <el-tag v-if="f.objective.pending" type="warning" effect="plain" size="small" data-testid="obj-pending">待确认</el-tag>
+        
       </div>
       <div class="obj"><Tex :tex="f.objective.latex" display /></div>
       <div v-if="f.objective.note" class="sub">{{ f.objective.note }}</div>

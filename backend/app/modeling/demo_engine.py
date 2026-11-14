@@ -15,7 +15,7 @@ from ..spec.schema import DeltaPi, StructuralOp
 from . import dialog
 from .extract import (
     Span, extract_keywords, extract_kv_mentions, extract_objects, extract_periods,
-    match_switching_limit, split_clauses, split_sentences,
+    match_switching_limit, match_uc_limit, split_clauses, split_sentences,
 )
 from .magnitude import to_mw
 from .state import Entity, ParseContext, ParseResult, PendingIntent
@@ -183,6 +183,17 @@ class DemoRuleEngine:
                 add_struct("voltage_deviation", "objective", {"beta": None}, k.text, [k])
             elif rid == "fixed_topology":
                 add_struct("multi_period_acopf", "problem", {}, k.text, [k])
+            elif rid == "generator_redispatch":
+                add_struct("generator_redispatch", "problem", {"ramp_pct": None}, k.text, [k])
+            elif rid == "unit_commitment":
+                uc = match_uc_limit(text)
+                if uc:
+                    add_struct("unit_commitment", "constraint", {"max_switch": uc["k"]}, text[min(k.start, uc["start"]):uc["end"]], [k])
+                else:
+                    add_struct("unit_commitment", "constraint", {"max_switch": None}, k.text, [k], ["max_switch"])
+            elif rid in ("cost_economic", "reliability_nm1", "renewable_accommodation"):
+                coef = "unit_cost" if rid == "cost_economic" else "penalty"
+                add_struct(rid, "objective", {coef: None}, k.text, [k], [coef])
 
         # ---- N−1：确认 ω，不生成 s ----
         n1_on = [k for k in kws if k.rule_id == "n_minus_1_on"]

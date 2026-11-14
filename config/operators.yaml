@@ -8,9 +8,9 @@
 base:
   objective:
     id: OBJ
-    title: 目标（占位，待确认）
-    pending: true
-    note: 数据里没有发电成本，基础目标暂用“偏离当前方式最小”，其中机组参考出力取断面里的 PG。该条已写入 docs/ASSUMPTIONS.md，公式页标“待确认”。
+    title: 目标（基础：偏离当前方式最小）
+    pending: false
+    note: 断面里没有发电成本，基础目标取“偏离当前方式最小”，机组参考出力为断面 PG；需要经济性、可靠性、新能源消纳时，在结构修改里叠加对应目标项。
     latex: '\min \sum_{t\in\mathcal T}\sum_{g\in\mathcal G}\left(P^{G}_{g,t}-P^{G,0}_{g}\right)^{2}'
   blocks:
     - id: B1
@@ -137,3 +137,78 @@ operators:
     latex: '+\ {beta}\sum_{t}\sum_{i}\left(V_{i,t}-1\right)^{2}'
     code: |
       obj_terms.append({beta} * sum((m.v[i, t] - 1.0) ** 2 for i in m.N for t in m.T))
+
+  generator_redispatch:
+    name: 机组出力调整
+    kind: problem
+    meaning: 机组出力作为决策变量，在上下限与爬坡范围内再调度
+    params:
+      ramp_pct: {type: float, min_exclusive: 0, nullable: true, label: 爬坡上限（% PMAX / 时段，留空不限）}
+    latex: 'P^{G}_{g,t}\in[u_{g}\underline{P}_{g},\,u_{g}\overline{P}_{g}],\quad \left|P^{G}_{g,t}-P^{G}_{g,t-1}\right|\le {ramp_pct}\%\,\overline{P}_{g}'
+    code: |
+      RAMP_PCT = {ramp_pct_py}
+      if RAMP_PCT is not None:
+          def _ramp_rule(m, g, t):
+              if t == 1:
+                  return pyo.Constraint.Skip
+              lim = RAMP_PCT / 100.0 * D["gen"][g]["pmax"][t - 1] / base_mva
+              return pyo.inequality(-lim, m.pg[g, t] - m.pg[g, t - 1], lim)
+          m.ramp = pyo.Constraint(m.G, m.T, rule=_ramp_rule)
+
+  unit_commitment:
+    name: 机组启停
+    kind: constraint
+    meaning: 机组启停作为 0-1 决策变量（出力上下限随状态联动），限制全部时段启停总次数
+    params:
+      max_switch: {type: int, min: 1, label: 全部时段启停次数上限}
+    latex: 'u_{g,t}\in\{0,1\},\ u_{g,t}\underline{P}_{g}\le P^{G}_{g,t}\le u_{g,t}\overline{P}_{g},\ \sum_{t}\sum_{g}\left|u_{g,t}-u_{g,t-1}\right|\le {max_switch}'
+    code: |
+      m.GU = pyo.Set(initialize=[g for g in GENS if D["gen"][g]["status"][0] == 1 and D["gen"][g]["pmax"][0] > 0 and abs(D["gen"][g]["pg0"]) < 1000], ordered=True)
+      m.u = pyo.Var(m.GU, m.T, within=pyo.Binary, initialize=1)
+      m.du = pyo.Var(m.GU, m.T, within=pyo.NonNegativeReals, initialize=0.0)
+      def _uc_hi(m, g, t):
+          return m.pg[g, t] <= m.u[g, t] * D["gen"][g]["pmax"][t - 1] / base_mva
+      def _uc_lo(m, g, t):
+          return m.pg[g, t] >= m.u[g, t] * D["gen"][g]["pmin"][t - 1] / base_mva
+      def _du_up(m, g, t):
+          return m.du[g, t] >= m.u[g, t] - (1 if t == 1 else m.u[g, t - 1])
+      def _du_dn(m, g, t):
+          return m.du[g, t] >= (1 if t == 1 else m.u[g, t - 1]) - m.u[g, t]
+      m.uc_hi = pyo.Constraint(m.GU, m.T, rule=_uc_hi)
+      m.uc_lo = pyo.Constraint(m.GU, m.T, rule=_uc_lo)
+      m.du_up = pyo.Constraint(m.GU, m.T, rule=_du_up)
+      m.du_dn = pyo.Constraint(m.GU, m.T, rule=_du_dn)
+      m.uc_total = pyo.Constraint(expr=sum(m.du[g, t] for g in m.GU for t in m.T) <= {max_switch})
+
+  cost_economic:
+    name: 经济性目标（发电成本）
+    kind: objective
+    meaning: 目标加机组发电成本；单价取常数，由用户给出（断面里没有成本数据）
+    params:
+      unit_cost: {type: float, min_exclusive: 0, label: 单价（元/MWh）}
+    latex: '+\ {unit_cost}\sum_{t}\sum_{g}P^{G}_{g,t}'
+    code: |
+      obj_terms.append({unit_cost} * sum(m.pg[g, t] for g in m.G for t in m.T))
+
+  reliability_nm1:
+    name: 可靠性目标（失负荷代价）
+    kind: objective
+    meaning: 目标加孤岛型事故的失负荷代价；系数由用户给出
+    params:
+      penalty: {type: float, min_exclusive: 0, label: 失负荷代价（元/MWh）}
+    latex: '+\ {penalty}\sum_{t}\sum_{c\in\mathcal C^{iso}}\mathrm{ENS}_{c,t}'
+    code: |
+      ISO_PENALTY = {penalty}
+      m.iso_penalty = ISO_PENALTY  # 孤岛型事故的失负荷量 ENS 由事故集给出，展开形式由求解链定义
+
+  renewable_accommodation:
+    name: 新能源消纳目标
+    kind: objective
+    meaning: 目标加新能源弃电惩罚；需要数据里标明新能源机组（RENEWABLE 列），当前断面没有
+    params:
+      penalty: {type: float, min_exclusive: 0, label: 弃电惩罚（元/MWh）}
+    latex: '+\ {penalty}\sum_{t}\sum_{g\in\mathcal G^{ren}}\left(\overline{P}^{av}_{g,t}-P^{G}_{g,t}\right)'
+    code: |
+      REN = [g for g in GENS if D["gen"][g].get("renewable", 0) == 1]  # RENEWABLE = 1 的机组；当前断面全为 0，集合为空
+      if REN:
+          obj_terms.append({penalty} * sum(D["gen"][g]["pmax"][t - 1] / base_mva - m.pg[g, t] for g in REN for t in m.T))

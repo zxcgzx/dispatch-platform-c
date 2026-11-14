@@ -94,6 +94,29 @@ async function clearOverride() {
   await t.saveSpec(s)
 }
 
+// ---- 条件拆解：对象、参数、幅度、时段、约束要求、目标要求
+const conditions = computed(() => {
+  const s = spec.value
+  if (!s) return []
+  const per = (ps: number[]) => (!ps.length || ps.length >= (s.omega.periods || 1) ? '全部时段' : '时段 ' + ps.join('、'))
+  const rows: { kind: string; text: string; ok: boolean }[] = []
+  s.delta_pi.forEach((d) => {
+    const val = d.source === 'inferred' ? (d.value == null ? '幅度待确认' : `系数 ${d.value}`) : d.operation === 'scale' ? `×${d.value}` : d.operation === 'add' ? `+${d.value}` : `= ${d.value}`
+    rows.push({ kind: '对象与参数', text: `${d.target}.${d.param}`, ok: true })
+    rows.push({ kind: '幅度', text: `${d.target}.${d.param} ${val}`, ok: d.source === 'explicit' || d.value != null })
+    rows.push({ kind: '时段', text: `${d.target}：${per(d.periods)}`, ok: true })
+  })
+  const kindName: Record<string, string> = { constraint: '约束要求', objective: '目标要求', problem: '问题类型' }
+  s.structural.forEach((o) => rows.push({ kind: kindName[o.kind] ?? '结构', text: opName(o.op_id), ok: !(o.pending_fields ?? []).length }))
+  rows.push({ kind: '约束要求', text: s.omega.n_minus_1 ? 'N−1 安全约束（开启）' : '不考虑 N−1', ok: true })
+  return rows
+})
+function opName(id: string) { return t.meta?.operators?.[id]?.name ?? id }
+const condGroups = computed(() => {
+  const order = ['对象与参数', '幅度', '时段', '问题类型', '约束要求', '目标要求']
+  return order.map((k) => ({ k, items: conditions.value.filter((c) => c.kind === k) })).filter((g) => g.items.length)
+})
+
 const inferred = computed(() => (spec.value?.delta_pi ?? []).filter((d) => d.source === 'inferred'))
 const pending = computed(() => parse.value?.pending ?? [])
 </script>
@@ -127,6 +150,14 @@ const pending = computed(() => parse.value?.pending ?? [])
       </div>
       <div v-if="pending.length" class="pend">
         <div v-for="p in pending" :key="p.id" class="lv-warn">“{{ p.evidence }}”：没有明确对象，已挂起，等你指明（系统不会猜）。</div>
+      </div>
+    </section>
+
+    <section v-if="condGroups.length" class="card card-pad" data-testid="conditions">
+      <div class="card-title">条件拆解 <span class="sub">这句话里一共有几个条件：对象、参数、幅度、时段、约束要求、目标要求</span></div>
+      <div v-for="g in condGroups" :key="g.k" class="cg">
+        <span class="ck">{{ g.k }}</span>
+        <span v-for="(c, i) in g.items" :key="i" class="cc" :class="{ bad: !c.ok }">{{ c.text }}</span>
       </div>
     </section>
 
@@ -215,6 +246,10 @@ const pending = computed(() => parse.value?.pending ?? [])
 .badge-p, .badge-o { position: absolute; top: 4px; right: 6px; font-style: normal; font-size: 10px; color: var(--c-primary-ink); }
 .badge-o { top: auto; bottom: 4px; color: var(--c-infer); }
 .reason { margin: 10px 0 4px; font-size: var(--fs-sm); }
+.cg { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 5px 0; border-bottom: 1px dashed var(--c-hairline); }
+.ck { width: 86px; font-size: var(--fs-xs); color: var(--c-muted); }
+.cc { background: var(--c-primary-bg); color: var(--c-primary-ink); border-radius: 12px; padding: 1px 10px; font-size: var(--fs-sm); }
+.cc.bad { background: var(--c-infer-bg); color: var(--c-infer); }
 .infer-box { background: var(--c-infer-bg); border-color: var(--c-infer-line); }
 .chain { margin-bottom: 8px; }
 .steps { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0; }

@@ -330,11 +330,21 @@ def extract_keywords(text: str) -> list[Entity]:
         negated = any(w in before for w in neg)
         add(m.start(), m.end(), "n1", "n_minus_1_off" if negated else "n_minus_1_on")
     sr = kb["structural_rules"]
-    for key in ("switching_penalty", "section_limit", "loss_min", "voltage_deviation", "fixed_topology"):
+    for key in ("switching_penalty", "section_limit", "loss_min", "voltage_deviation", "fixed_topology", "generator_redispatch",
+                "unit_commitment", "cost_economic", "reliability_nm1", "renewable_accommodation"):
         for s, e, _ in _find_all(text, sr[key]["keywords"]):
             add(s, e, "structural", key)
     out.sort(key=lambda e: e.start)
     return out
+
+
+def match_uc_limit(text: str) -> dict | None:
+    """“机组启停不超过 N 次”：返回 {k, start, end, text}。"""
+    pat = re.compile(knowledge()["structural_rules"]["unit_commitment"]["pattern"])
+    m = pat.search(text)
+    if not m:
+        return None
+    return {"k": int(m.group(1)), "start": m.start(), "end": m.end(), "text": m.group(0)}
 
 
 def match_switching_limit(text: str) -> list[dict]:

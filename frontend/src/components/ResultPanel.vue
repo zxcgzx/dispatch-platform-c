@@ -52,6 +52,7 @@ const planRows = computed(() => {
     .map(([id, a]) => ({ id, v: a, off: a.map((x, i) => (x === 0 ? i + 1 : 0)).filter(Boolean), b: base.value.branch[id] }))
     .filter((x) => showAll.value || x.off.length)
 })
+const ucRows = computed(() => Object.entries(result.value?.gen_u ?? {}).map(([id, a]) => ({ id, v: a, off: a.map((x, i) => (x === 0 ? i + 1 : 0)).filter(Boolean) })))
 const maintenance = computed(() => new Set(outageRows.value))
 
 // ---- 机组调整
@@ -145,6 +146,13 @@ const f1 = (x: number) => (x >= 0 ? '+' : '') + x.toFixed(1)
             <p v-if="genRows.length > 12" class="sub">仅列变化最大的 12 台，共 {{ genRows.length }} 台。</p>
             <div v-if="nPer > 1" ref="genEl" class="gchart" data-testid="gen-chart" />
           </template>
+        </el-tab-pane>
+
+        <el-tab-pane v-if="ucRows.length" label="机组启停" name="uc">
+          <table class="table-plain" data-testid="uc-table">
+            <thead><tr><th>机组</th><th>停机时段</th></tr></thead>
+            <tbody><tr v-for="r in ucRows" :key="r.id"><td class="mono"><b>{{ r.id }}</b></td><td>{{ r.off.join('、') }}</td></tr></tbody>
+          </table>
         </el-tab-pane>
 
         <el-tab-pane label="电网地图" name="map" lazy><DaliMap :result="result" :outage-rows="outageRows" :height="560" /></el-tab-pane>

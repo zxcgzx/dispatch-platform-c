@@ -68,7 +68,7 @@ await p.goto(BASE + '/features'); await p.waitForSelector('[data-testid=feature-
 const html = await p.content()
 for (const w of ['铮昊', '方法组']) must(!html.includes(w), `功能清单页没有“${w}”`)
 const names = await p.$$eval('[data-feature]', (r) => r.map((x) => x.textContent.replace(/\s+/g, ' ')))
-must(names.some((n) => n.includes('外部建模引擎接入')) && names.some((n) => n.includes('外部去幻觉校验接入')), '功能清单里是中性名称')
+must(names.some((n) => n.includes('外部动态建模引擎接入')) && names.some((n) => n.includes('外部去幻觉校验接入')), '功能清单里是中性名称')
 await p.screenshot({ path: `${OUT}/09_features.png` })
 await p.goto(BASE + '/data'); await p.waitForSelector('[data-testid=facts-card]')
 await p.click('.el-tabs__item:has-text("外部接口")')

@@ -1,4 +1,4 @@
-"""任务书指标 4.2：负载率、电压偏移、N−1 直流筛查。
+"""质量评估指标：负载率、电压偏移、N−1 直流筛查。
 
 调整前用断面里的潮流（PF、QF、PT、QT、VM）计算——这是真实数据；调整后用求解结果计算，mock 模式下显示“—”（返回 None）。
 
@@ -29,13 +29,13 @@ from ..data.topology import Topology
 def branch_loading(snap: Snapshot, flows: dict[str, dict[str, float]] | None = None,
                    rate_scale: dict[str, float] | None = None, rate_set: dict[str, float] | None = None,
                    rate: np.ndarray | None = None, strict_flows: bool = False) -> np.ndarray:
-    """每条支路的负载率 ρ = max(√(PF²+QF²), √(PT²+QT²)) / RATE_A；RATE_A = 0 视为不限（NaN）。
+    """每条支路的负载率 ρ = max(√(PF²+QF²), √(PT²+QT²)) / 热稳限额（RATE_A 按 √3·kV·I 折成 MVA）；RATE_A = 0 视为不限（NaN）。
 
     flows：{L编号: {pf,qf,pt,qt}} 覆盖断面潮流（求解结果用）；strict_flows=True 时 flows 没覆盖的支路记 NaN（未知），不拿断面潮流顶替。
     rate：整条 RATE_A 数组覆盖（Δπ 之后的限额）；rate_scale / rate_set 是按支路的局部修改。"""
     br = snap.branch
     pf, qf, pt, qt = (br[c].to_numpy(dtype=float).copy() for c in ("PF", "QF", "PT", "QT"))
-    rate = (br["RATE_A"].to_numpy(dtype=float) if rate is None else np.asarray(rate, dtype=float)).copy()
+    rate = (snap.rate_mva() if rate is None else np.asarray(rate, dtype=float)).copy()
     ids = snap.branch_ids
     idx = {b: i for i, b in enumerate(ids)}
     unknown = np.zeros(len(ids), dtype=bool)
@@ -150,12 +150,12 @@ def n1_screening(snap: Snapshot, topo: Topology, flows_p: np.ndarray | None = No
                  in_service: np.ndarray | None = None, rule: str = "meshed_in_service") -> dict:
     """N−1 直流筛查。
 
-    flows_p：事故前有功潮流（MW）基准，默认取断面 PF（首端有功）；rate：RATE_A（MVA，当作 MW 限额）；in_service：当前在运状态。
+    flows_p：事故前有功潮流（MW）基准，默认取断面 PF（首端有功）；rate：热稳限额（MVA，当作 MW 限额）；in_service：当前在运状态。
     """
     br = snap.branch
     nl = len(br)
     in_service = topo.in_service.copy() if in_service is None else in_service.astype(bool)
-    rate = br["RATE_A"].to_numpy(dtype=float) if rate is None else rate
+    rate = snap.rate_mva() if rate is None else rate
     f0 = br["PF"].to_numpy(dtype=float).copy() if flows_p is None else flows_p.astype(float)
     f0 = np.where(in_service, f0, 0.0)
 
@@ -188,6 +188,8 @@ def n1_screening(snap: Snapshot, topo: Topology, flows_p: np.ndarray | None = No
     PT, pcc = ptdf_lodf(snap, in_service, mesh_cont) if mesh_cont else (np.zeros((nl, 0)), np.zeros(0))
     passed, failed, skipped = 0, [], 0
     limited = rate > 0
+    # 事故前就已超限的支路（如断面里 110/6kV 主变 L942 负载率 172%）：不算事故造成的越限，单列为“事故前已过载”
+    pre_over = limited & in_service & (np.abs(f0) > rate + 1e-9)
     for k, c in enumerate(mesh_cont):
         denom = 1.0 - pcc[k]
         if abs(denom) < 1e-8:                                # 数值上等同孤岛：归入孤岛事故
@@ -198,7 +200,7 @@ def n1_screening(snap: Snapshot, topo: Topology, flows_p: np.ndarray | None = No
         lodf[c] = -1.0
         post = f0 + lodf * f0[c]
         post[c] = 0.0
-        viol = limited & in_service & (np.abs(post) > rate + 1e-9)
+        viol = limited & in_service & ~pre_over & (np.abs(post) > rate + 1e-9)
         viol[c] = False
         if viol.any():
             worst = int(np.argmax(np.where(viol, np.abs(post) / np.where(limited, rate, 1.0), 0)))
@@ -222,6 +224,7 @@ def n1_screening(snap: Snapshot, topo: Topology, flows_p: np.ndarray | None = No
         "failed": sorted(failed, key=lambda x: -x["worst_rho"])[:50],
         "frequent_violated": [{"id": b, "count": c} for b, c in top],
         "islanding": iso_info,
+        "pre_overloaded": [{"id": branch_id(int(i) + 1), "rho": float(abs(f0[i]) / rate[i])} for i in np.flatnonzero(pre_over)],
         "note": ("事故集含孤岛型支路：这类事故一断开就形成孤岛，不进 LODF，单列为“孤岛事故”"
                  if iso_info["count"] else "事故集全部在网状部分，无孤岛型事故"),
     }

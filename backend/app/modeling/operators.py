@@ -7,7 +7,7 @@ from typing import Any
 
 from ..config import app_config, operators_config
 
-_TOKEN = re.compile(r"\{(k|K|beta|limit_mw|branches|branches_py|dir_lhs|dir_expr)\}")
+_TOKEN = re.compile(r"\{(k|K|beta|limit_mw|branches|branches_py|dir_lhs|dir_expr|ramp_pct|ramp_pct_py|max_switch|unit_cost|penalty)\}")
 
 
 def operators() -> dict[str, dict]:
@@ -65,6 +65,12 @@ def _mapping(op_id: str, params: dict, latex: bool) -> dict[str, str]:
         m["beta"] = _num(p["beta"])
     if p.get("limit_mw") is not None:
         m["limit_mw"] = _num(p["limit_mw"])
+    for key in ("ramp_pct", "max_switch", "unit_cost", "penalty"):
+        if p.get(key) is not None:
+            m[key] = _num(p[key])
+    m["ramp_pct_py"] = "None" if p.get("ramp_pct") is None else _num(p["ramp_pct"])
+    if latex and p.get("ramp_pct") is None:
+        m["ramp_pct"] = r"\infty"
     brs = p.get("branches") or []
     m["branches"] = ",".join(brs)
     m["branches_py"] = "[" + ", ".join(repr(b) for b in brs) + "]"
@@ -93,3 +99,6 @@ def render_code(op_id: str, params: dict) -> str:
 
 def needs_dz(ops: list[str]) -> bool:
     return any(o in ("switching_limit_per_period", "switching_limit_total", "switching_penalty") for o in ops)
+
+
+OBJECTIVE_COEF = {"cost_economic": "unit_cost", "reliability_nm1": "penalty", "renewable_accommodation": "penalty"}

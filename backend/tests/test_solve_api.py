@@ -152,7 +152,7 @@ def test_evaluate_before_is_real_data_after_is_none_in_mock():
     assert "非交流" in b["n1"]["method"]
     assert m["unimplemented"]["vsm"].startswith("待开发") and "暂不计算" in m["unimplemented"]["renewable"]
     assert e["risk"]["mode"] == "local" and "本地规则" in e["risk"]["source"]
-    assert e["risk"]["risk_level"] == "中"          # 基态 ρ 最大 0.42（<0.8），但 231 个母线电压高于上限 → 中
+    assert e["risk"]["risk_level"] == "高"          # 基态：L942 负载率 172%、N−1 筛查有 17 个事故越限 → 高
     assert e["risk"]["based_on"].startswith("调整前")
 
 

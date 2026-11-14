@@ -213,3 +213,42 @@ def adjust(tid: str, body: AdjustBody):
     _save(t, parse, new)
     db.log(tid, f"协商调整：由 v{row.version} 生成 v{new.version} 草稿（{len(body.picks)} 条建议）")
     return task_state(tid)
+
+
+# ------------------------------------------------------------------------------------------------
+# 分析：无解诊断 / CMDP / 问题分解
+# ------------------------------------------------------------------------------------------------
+@router.post("/tasks/{tid}/diagnose")
+def diagnose_task(tid: str, version: int | None = None):
+    from ..analysis.infeasibility import diagnose
+
+    row = _version(tid, version)
+    spec = ModelSpec.model_validate_json(row.spec_json)
+    return {"version": row.version, **diagnose(spec, window_of(spec))}
+
+
+@router.get("/tasks/{tid}/cmdp")
+def cmdp_task(tid: str, version: int | None = None):
+    from ..analysis.cmdp import build
+
+    row = _version(tid, version)
+    spec = ModelSpec.model_validate_json(row.spec_json)
+    return {"version": row.version, **build(spec, window_of(spec))}
+
+
+@router.get("/tasks/{tid}/decompose")
+def decompose_task(tid: str, version: int | None = None):
+    from ..analysis.decompose import subtasks
+
+    row = _version(tid, version)
+    spec = ModelSpec.model_validate_json(row.spec_json)
+    return {"version": row.version, **subtasks(window_of(spec), spec)}
+
+
+@router.get("/decompose/partition")
+def decompose_partition():
+    """不依赖任务：按县域分区统计，供“问题分解”页直接展示。"""
+    from ..analysis.decompose import partition
+    from ..data.library import build_window, default_snapshot_id
+
+    return partition(build_window(None, default_snapshot_id()))

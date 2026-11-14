@@ -97,13 +97,20 @@ const exampleJson = JSON.stringify({
   branch_flow: { L155: { pf: [], qf: [], pt: [], qt: [] } }, messages: [],
 }, null, 1)
 const mocked = computed(() => result.value?.status === 'mock')
+const infeasible = computed(() => result.value?.status === 'infeasible')
+const diag = ref<any>(null)
+const diagBusy = ref(false)
+async function runDiag() {
+  diagBusy.value = true
+  try { diag.value = await api.post(`/tasks/${t.taskId}/diagnose?version=${v.value}`) } finally { diagBusy.value = false }
+}
 </script>
 
 <template>
   <div class="sp" data-testid="solve-panel">
     <section class="card card-pad">
       <div class="card-title">步骤 5 · 求解</div>
-      <p class="sub">求解不是本平台的重点：只做占位、结果导入和外部适配接口，<b>不做任何求解加速、求解器调参、热启动</b>。</p>
+      <p class="sub">求解器作为黑盒接入：内置 HiGHS 可直接求解直流近似 OTS，商业求解器（COPT / Gurobi）与外部求解链经外部命令接入；<b>不做求解加速、调参、热启动</b>。</p>
       <div v-if="blocked" class="lv-error" data-testid="solve-blocked">v{{ v }} 校验有错误，不能进入求解：请先回到“规格确认”修正。</div>
       <div class="grid">
         <div>
@@ -122,7 +129,7 @@ const mocked = computed(() => result.value?.status === 'mock')
       </div>
       <div class="row" style="margin-top: 10px">
         <el-button v-if="mode !== 'import'" type="primary" :disabled="blocked || t.busy || job?.status === 'running'" data-testid="run-solve" @click="run">
-          {{ mode === 'mock' ? '运行（mock，不调用求解器）' : '运行外部求解' }}
+          {{ mode === 'mock' ? '运行（mock，不调用求解器）' : mode === 'builtin' ? '运行求解' : '运行外部求解' }}
         </el-button>
         <template v-else>
           <label class="upload">
@@ -137,6 +144,17 @@ const mocked = computed(() => result.value?.status === 'mock')
 
     <section v-if="mocked" class="banner" data-testid="mock-banner">
       占位模式：未调用求解器，没有开断方案和出力调整。
+    </section>
+
+    <section v-if="infeasible" class="card card-pad diag" data-testid="diag-card">
+      <div class="card-title">无解诊断 <StatusBadge feature="m4.iis" small />
+        <el-button type="primary" size="small" :loading="diagBusy" data-testid="run-diag" @click="runDiag">定位冲突约束</el-button></div>
+      <p class="sub">求解器没有找到可行方案。逐项放开限额、断面、开关次数、机组范围、停运等约束，看放开哪一项后模型变可行，那一项就是冲突来源。</p>
+      <template v-if="diag">
+        <div :class="diag.conflicts.length ? 'lv-warn' : 'sub'" data-testid="diag-msg">{{ diag.message }}</div>
+        <ul class="cl"><li v-for="c in diag.conflicts" :key="c.id" :data-conflict="c.id"><b>{{ c.label }}</b><span class="sub">　建议：{{ c.hint }}</span></li></ul>
+        <div class="sub">耗时 {{ diag.elapsed_s }} s</div>
+      </template>
     </section>
 
     <section class="card card-pad">
@@ -163,6 +181,7 @@ const mocked = computed(() => result.value?.status === 'mock')
 
 <style scoped>
 .sp { display: flex; flex-direction: column; gap: var(--sp-3); }
+.cl { margin: 6px 0; padding-left: 18px; line-height: 1.9; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
 .banner { background: var(--c-st-black-bg); border: 1px dashed var(--c-st-black); border-radius: var(--radius); padding: 12px 16px; font-weight: 600; }
 .log { background: #111; color: #d6e2d6; padding: 10px 12px; border-radius: var(--radius-sm); font-size: var(--fs-xs); line-height: 1.6; max-height: 260px; overflow: auto; white-space: pre-wrap; margin: 0; }

@@ -65,7 +65,7 @@ def to_tex_file(spec: ModelSpec, f: dict) -> str:
     for c in f["changes"]:
         lines.append(rf"% [{c['id']}] {c['title']}")
         lines.append(r"\[ " + c["latex"] + r" \]")
-    lines.append(r"\section*{目标（待确认）}")
+    lines.append(r"\section*{目标}")
     lines.append(r"\[ " + f["objective"]["latex"] + r" \]")
     lines.append(r"\section*{基础模型}")
     for b in f["blocks"]:

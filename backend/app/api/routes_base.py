@@ -36,7 +36,7 @@ def get_summary(sid: str):
 
 @router.get("/window")
 def get_window(start: str | None = None, snapshot: str | None = None):
-    """选起始时刻 → 16 时段窗口（断面 id 列表、是否单断面演示模式）。"""
+    """选起始时刻 → 16 时段窗口（断面 id 列表、是否单断面）。"""
     try:
         st = datetime.fromisoformat(start) if start else None
         w = build_window(st, snapshot)
@@ -64,17 +64,18 @@ def get_topology(snapshot: str | None = None):
          "x": pos[bus_id(b)][0], "y": pos[bus_id(b)][1]}
         for b, k, t, pd, vm in zip(snap.bus["BUS_I"], snap.bus["BASE_KV"], snap.bus["BUS_TYPE"], snap.bus["PD"], snap.bus["VM"])
     ]
+    rate_mva = snap.rate_mva()
     branches = []
     for i in range(len(br)):
         r = br.iloc[i]
-        rate = float(r.RATE_A)
+        rate = float(rate_mva[i])
         s_from = (float(r.PF) ** 2 + float(r.QF) ** 2) ** 0.5
         s_to = (float(r.PT) ** 2 + float(r.QT) ** 2) ** 0.5
         branches.append({
             "id": branch_id(i + 1), "row": i + 1, "from": bus_id(r.F_BUS), "to": bus_id(r.T_BUS),
             "kv": float(topo.kv[i]), "transformer": bool(topo.is_transformer[i]),
             "isolating": bool(topo.isolating[i]), "in_service": bool(topo.in_service[i]),
-            "parallel": int(topo.parallel_group[i]), "rate_a": rate,
+            "parallel": int(topo.parallel_group[i]), "rate_a": round(rate, 2),
             "pf": round(float(r.PF), 3), "qf": round(float(r.QF), 3),
             "load_ratio": round(max(s_from, s_to) / rate, 4) if rate > 0 else None,
         })

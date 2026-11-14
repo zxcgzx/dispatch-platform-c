@@ -2,7 +2,7 @@
 
 约定：
 - 每个对象的时变量是长度 T 的列表（下标 t-1），Δπ 只改这些列表的指定时段；
-- 集合（可开断集合、事故集）按第 1 个时段的断面拓扑取（假设拓扑在 4 小时窗口内不变，见 ASSUMPTIONS）。
+- 集合（可开断集合、事故集）按第 1 个时段的断面拓扑取（假设拓扑在 4 小时窗口内不变，见 docs/DESIGN.md）。
 """
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ def _cols(snap: Snapshot) -> dict[str, dict[str, list]]:
     return {
         "bus": {c: b[c].tolist() for c in ("PD", "QD", "VMAX", "VMIN")},
         "gen": {c: g[c].tolist() for c in ("PMAX", "PMIN", "QMAX", "QMIN", "GEN_STATUS")},
-        "branch": {c: r[c].tolist() for c in ("RATE_A", "BR_STATUS")},
+        "branch": {"RATE_A": snap.rate_mva().tolist(), "BR_STATUS": r["BR_STATUS"].tolist()},     # RATE_A 折算成 MVA
     }
 
 

@@ -65,7 +65,15 @@ def estimate(spec: ModelSpec, window: Window, T: int | None = None, with_n1: boo
             add(s.id, s.op_id, cons=1 if not s.pending_fields else 0)
         elif s.op_id == "section_limit":
             add(s.id, s.op_id, cons=T if not s.pending_fields else 0)
-        elif s.op_id in ("switching_penalty", "loss_min", "voltage_deviation", "multi_period_acopf"):
+        elif s.op_id == "unit_commitment":
+            gu = sum(1 for g in D["gen"].values() if g["status"][0] == 1 and g["pmax"][0] > 0 and abs(g["pg0"]) < 1000)
+            ok = not s.pending_fields
+            add(s.id, s.op_id, var_c=(gu * T) if ok else 0, var_b=(gu * T) if ok else 0, cons=(4 * gu * T + 1) if ok else 0,
+                note=f"{gu} 台可启停机组 × {T} 时段：u（0-1）与启停动作 du；出力上下限联动 2 组、du 线性化 2 组、总次数 1 条")
+        elif s.op_id == "generator_redispatch":
+            r = (s.params or {}).get("ramp_pct")
+            add(s.id, s.op_id, cons=(G * max(T - 1, 0)) if r is not None else 0, note="爬坡约束 G·(T−1) 条" if r is not None else "不限爬坡：不增加约束")
+        elif s.op_id in ("switching_penalty", "loss_min", "voltage_deviation", "multi_period_acopf", "cost_economic", "reliability_nm1", "renewable_accommodation"):
             add(s.id, s.op_id, note="目标项 / 固定拓扑，不增加变量与约束")
         else:
             unknown.append(s.id)

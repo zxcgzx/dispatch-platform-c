@@ -17,7 +17,7 @@ export const useTaskStore = defineStore('task', {
   state: () => ({
     meta: null as Meta | null,
     state: null as TaskState | null,
-    tab: 'spec' as 'spec' | 'formula' | 'code' | 'check',
+    tab: 'spec' as 'spec' | 'triple' | 'dynamic' | 'formula' | 'code' | 'check',
     step: 1,
     busy: false,
     error: '' as string,
@@ -73,7 +73,7 @@ export const useTaskStore = defineStore('task', {
           if (vs.solved || this.step >= 6) out[5] = this.step === 6 ? 'active' : 'done'
           if (vs.evaluated) out[6] = this.step === 7 ? 'active' : 'done'
           else if (this.step === 7) out[6] = 'active'
-          else if (vs.solved || this.step >= 6) out[6] = 'active'    // 求解后即可进入风险评估（评估在打开该步时自动运行）
+          else out[6] = 'active'      // 建模确认后即可进入风险评估：先协商不一定要先求解，评估在打开该步时自动运行
         }
       }
       return out

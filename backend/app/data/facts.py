@@ -82,7 +82,7 @@ def compute_quality(snap: Snapshot, topo: Topology) -> list[dict]:
     add("Q-PG", "warn", "机组出力不在 [PMIN, PMAX] 内", len(out_rows), "例如 G143：PG ≈ 45.4 MW，PMAX = 10；未做修正", ex)
 
     zero_rate = [branch_id(i + 1) for i in np.flatnonzero(br["RATE_A"].to_numpy() == 0)]
-    add("Q-RATE0", "warn", "RATE_A = 0 的支路（视为不限）", len(zero_rate), "负载率不计算这些支路；热稳约束 B4 对其不加", zero_rate)
+    add("Q-RATE0", "warn", "RATE_A = 0 的支路（视为不限）", len(zero_rate), "RATE_A 是额定电流（A），热稳限额按 √3·kV·I/1000 折成 MVA；为 0 的支路不计负载率，热稳约束 B4 对其不加", zero_rate)
 
     neg = bus[bus["PD"] < 0]
     add("Q-PD-NEG", "info", "PD < 0 的母线（分布式电源按负负荷处理）", len(neg), "不做拆分，按负负荷处理")

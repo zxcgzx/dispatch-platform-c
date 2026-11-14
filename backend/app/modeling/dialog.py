@@ -118,9 +118,13 @@ def _value_question(item_id: str, component: str, param: str, direction: str | N
 def _struct_question(s: StructuralOp, f: str) -> Question:
     hint = {"limit_mw": ("断面有功限额是多少 MW？", "例如 300"), "branches": ("断面由哪些支路组成？", "例如 L428,L429"),
             "k": ("开关操作次数上限 k 是多少？", "正整数"), "K": ("开关操作总次数上限 K 是多少？", "正整数"),
-            "beta": ("目标项系数 β 取多少？", "正数；留空则用配置默认值")}.get(f, (f"请补充参数 {f}", ""))
+            "beta": ("目标项系数 β 取多少？", "正数；留空则用配置默认值"),
+            "max_switch": ("全部时段机组启停总次数上限是多少？", "正整数"),
+            "unit_cost": ("发电成本单价是多少（元/MWh）？断面里没有成本数据，需要你给出", "正数，例如 300"),
+            "penalty": ("惩罚 / 代价系数是多少（元/MWh）？", "正数，例如 1000"),
+            "ramp_pct": ("爬坡上限是 PMAX 的百分之几 / 时段？", "正数；留空表示不限")}.get(f, (f"请补充参数 {f}", ""))
     return Question(id=f"q-{s.id}-{f}", field="other", item_id=s.id, param=f, text=hint[0], allow_free_text=True,
-                    free_text_hint=hint[1], blocking=f != "beta")
+                    free_text_hint=hint[1], blocking=f not in ("beta", "ramp_pct"))
 
 
 # ---------------------------------------------------------------------------------------
@@ -234,10 +238,18 @@ def apply_answer(res: ParseResult, question_id: str, answer: str, ctx: ParseCont
 
 def _apply_struct_param(s: StructuralOp, param: str, answer: str, ctx: ParseContext) -> None:
     a = answer.strip()
-    if param in ("k", "K"):
+    if param in ("k", "K", "max_switch"):
         if not re.fullmatch(r"\d+", a) or int(a) < 1:
             raise ValueError("请输入正整数")
         s.params[param] = int(a)
+    elif param in ("unit_cost", "penalty", "ramp_pct"):
+        if a == "" and param == "ramp_pct":
+            s.params[param] = None
+        else:
+            m = re.fullmatch(r"\d+(?:\.\d+)?", a)
+            if not m or float(a) <= 0:
+                raise ValueError("请输入大于 0 的数值")
+            s.params[param] = float(a)
     elif param == "limit_mw":
         m = re.search(r"\d+(?:\.\d+)?", a)
         if not m or float(m.group()) <= 0:

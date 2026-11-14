@@ -1,4 +1,4 @@
-"""模型规格：全平台唯一的中间产物 M = {ω, Δπ, s, R}（沿用 ProOPF），加断面、版本和校验信息。
+"""模型规格：全平台唯一的中间产物 M = {ω, Δπ, s, R}（L1–L4 判级依据此结构），加断面、版本和校验信息。
 
 前端类型由 JSON Schema 生成（backend/app/spec/export_schema.py → spec.schema.json → npm run gen:types），两边保持一致。
 """
@@ -30,12 +30,12 @@ class DeltaPi(_Strict):
     evidence: str = ""                                             # 从指令原文逐字摘出的片段
     inference_chain: list[str] | None = None                       # 如 ["极端高温", "线路热稳裕度下降", "调低 RATE_A"]
     confirmed: bool = False                                        # 推断项经用户确认后为 True
-    pending_fields: list[str] = Field(default_factory=list)        # 追问中尚未确定的字段：periods / value / target（实现扩展，见 ASSUMPTIONS）
+    pending_fields: list[str] = Field(default_factory=list)        # 追问中尚未确定的字段：periods / value / target
     origin: str | None = None                                      # 条目来源：空 = 来自指令；"negotiation:r-1" = 协商调整建议（没有原文依据，W501 不检查）
 
 
 class StructuralOp(_Strict):
-    """结构修改 s。kind 对应 ProOPF 的 sp / sc / so。"""
+    """结构修改 s。kind：problem 问题类型 / constraint 约束 / objective 目标项。"""
 
     id: str                                                        # "s-1"
     kind: Literal["problem", "constraint", "objective"]
@@ -49,7 +49,7 @@ class StructuralOp(_Strict):
 
 
 class BaseModelDef(_Strict):
-    """基础模型 ω。N−1 是 ω 的默认设置（任务书要求），s 只放 ω 之外的扩展。"""
+    """基础模型 ω。N−1 是 ω 的默认设置（默认开启），s 只放 ω 之外的扩展。"""
 
     system: str = "dali_905"
     problem: Literal["multi_period_ac_ots", "multi_period_acopf"] = "multi_period_ac_ots"
@@ -78,7 +78,7 @@ class SnapshotRef(_Strict):
     start: str | None = None                                       # 起始时刻 ISO
     periods: int = 16
     step_min: int = 15
-    single_snapshot: bool = False                                  # 只有一个文件，复制成 16 时段（演示模式）
+    single_snapshot: bool = False                                  # 只有一个断面文件时为 True，按 1 个时段建模
 
 
 class LevelOverride(_Strict):

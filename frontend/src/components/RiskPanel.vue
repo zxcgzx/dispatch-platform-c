@@ -56,6 +56,23 @@ async function adjust() {
   })
 }
 const n1 = computed(() => m.value?.before?.n1)
+const cmdp = ref<any>(null)
+async function loadCmdp() {
+  if (!t.taskId || v.value === null) return
+  cmdp.value = await api.get(`/tasks/${t.taskId}/cmdp?version=${v.value}`)
+}
+watch(mode, (x) => { if (x === 'reward' && !cmdp.value) void loadCmdp() })
+// Reward 分解：每类安全代价取调整后（没有结果时取调整前）的度量，奖励 = −(目标) − Σ λ·代价
+const rewardParts = computed(() => {
+  const b = m.value?.after ?? m.value?.before
+  if (!b) return []
+  const n1x = b.n1
+  return [
+    { k: '负载率越限条数', v: b.load_rate?.n_violation ?? 0 },
+    { k: 'N−1 不通过事故数', v: n1x?.failed_count ?? 0 },
+    { k: '电压越限母线数', v: b.voltage?.n_out ?? '—' },
+  ]
+})
 </script>
 
 <template>
@@ -120,8 +137,20 @@ const n1 = computed(() => m.value?.before?.n1)
           <el-radio-button value="negotiate">协商</el-radio-button><el-radio-button value="reward">Reward</el-radio-button>
         </el-radio-group></div>
 
-      <div v-if="mode === 'reward'" class="empty" data-testid="reward-panel">
-        <StatusBadge feature="m7.reward" /> Reward 对应任务 3 的安全强化学习，按会议安排放到中期之后部署。接口：课题 3 返回 <code>reward</code>（number|null）；奖励项占位：安全（N−1 不通过数、ρ≥100% 条数）、电压越限数、开关动作数。当前不做任何计算。
+      <div v-if="mode === 'reward'" class="reward" data-testid="reward-panel">
+        <div class="sub"><StatusBadge feature="m7.reward" small /> 风险等级折算成奖励，反馈给强化学习；课题 3 接口返回 <code>reward</code>（number | null）。</div>
+        <table class="table-plain">
+          <thead><tr><th>安全代价项</th><th>当前值</th></tr></thead>
+          <tbody><tr v-for="p in rewardParts" :key="p.k"><td>{{ p.k }}</td><td><b>{{ p.v }}</b></td></tr></tbody>
+        </table>
+        <div class="sub">奖励 r = −（偏离当前方式 + 目标项） − Σ λ<sub>i</sub>·代价<sub>i</sub>；系数 λ 由课题 3 给出，未给出时不折算。</div>
+        <div v-if="cmdp" class="cmdp" data-testid="cmdp-card">
+          <div class="card-title">OTS → CMDP <StatusBadge feature="m10.cmdp" small /></div>
+          <div class="kv"><span>状态维度</span><b>{{ cmdp.state.dim }}</b><span>每步动作数</span><b>{{ cmdp.action.per_step_total }}（0-1：{{ cmdp.action.binary }}）</b><span>时段</span><b>{{ cmdp.periods }}</b><span>全时域动作</span><b>{{ cmdp.horizon_actions }}</b></div>
+          <div class="sub">{{ cmdp.reward.expr }}</div>
+          <ul class="cl"><li v-for="c in cmdp.costs" :key="c.id"><b>{{ c.name }}</b>　<span class="sub">{{ c.expr }}</span></li></ul>
+          <div class="sub">{{ cmdp.note }}</div>
+        </div>
       </div>
       <template v-else>
         <p class="sub">按风险原因生成调整建议，每条是一条待确认的 Δπ 或 s；<b>数值一律留空，由你填写</b>。勾选后生成新一版规格并回到步骤 3。</p>
@@ -156,4 +185,9 @@ const n1 = computed(() => m.value?.before?.n1)
 .fields { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0 0 24px; }
 .fields label { display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-xs); color: var(--c-muted); }
 .note { padding: 0 4px; }
+.reward { display: flex; flex-direction: column; gap: 10px; }
+.cmdp { border: 1px dashed var(--c-border); border-radius: var(--radius); padding: 10px 14px; }
+.kv { display: grid; grid-template-columns: auto auto auto auto; gap: 4px 14px; font-size: var(--fs-sm); margin: 6px 0; }
+.kv span { color: var(--c-muted); }
+.cl { margin: 6px 0; padding-left: 18px; line-height: 1.8; }
 </style>

@@ -57,12 +57,21 @@ def solve_spec(spec: ModelSpec, window: Window, time_limit: float | None = None)
     sw_idx = {br_ids.index(l): k for k, l in enumerate(sw_ids)}
     ns = len(sw_ids)
 
-    # ---- 变量编号（逐时段分块）：θ(nb) | pg(ng) | p(nl) | z(ns) | d(ng) | dz(ns)
-    per = nb + ng + nl + ns + ng + ns
+    uc_op = next((s for s in spec.structural if s.op_id == "unit_commitment" and not s.pending_fields), None)
+    uc_idx = [k for k, g in enumerate(gen_ids) if D["gen"][g]["status"][0] == 1 and D["gen"][g]["pmax"][0] > 0 and abs(D["gen"][g]["pg0"]) < 1000] if uc_op else []
+    uc_pos = {k: j for j, k in enumerate(uc_idx)}
+    nu = len(uc_idx)
+    ramp_op = next((s for s in spec.structural if s.op_id == "generator_redispatch"), None)
+    ramp_pct = (ramp_op.params or {}).get("ramp_pct") if ramp_op else None
+    unit_cost = next((float((s.params or {}).get("unit_cost")) for s in spec.structural if s.op_id == "cost_economic" and (s.params or {}).get("unit_cost")), None)
+
+    # ---- 变量编号（逐时段分块）：θ(nb) | pg(ng) | p(nl) | z(ns) | d(ng) | dz(ns) | u(nu) | du(nu)
+    per = nb + ng + nl + ns + ng + ns + nu + nu
     N = per * T
     def ix(t: int, kind: str, k: int = 0) -> int:
         o = t * per
-        return o + {"th": 0, "pg": nb, "p": nb + ng, "z": nb + ng + nl, "d": nb + ng + nl + ns, "dz": nb + ng + nl + ns + ng}[kind] + k
+        return o + {"th": 0, "pg": nb, "p": nb + ng, "z": nb + ng + nl, "d": nb + ng + nl + ns, "dz": nb + ng + nl + ns + ng,
+                    "u": nb + ng + nl + ns + ng + ns, "du": nb + ng + nl + ns + ng + ns + nu}[kind] + k
 
     rows: list[int] = []
     cols: list[int] = []
@@ -125,6 +134,24 @@ def solve_spec(spec: ModelSpec, window: Window, time_limit: float | None = None)
             lb[ix(t, "pg", k)], ub[ix(t, "pg", k)] = pmin, pmax
             lb[ix(t, "d", k)], ub[ix(t, "d", k)] = 0.0, 100.0
             cost[ix(t, "d", k)] = 1.0
+            if unit_cost:
+                cost[ix(t, "pg", k)] += unit_cost / 1000.0 / base      # 单价按 元/MWh 折成 p.u. 功率的系数，量级缩小便于数值稳定
+            if k in uc_pos:
+                u, du = ix(t, "u", uc_pos[k]), ix(t, "du", uc_pos[k])
+                integ[u] = 1; lb[u], ub[u] = 0.0, 1.0
+                lb[du], ub[du] = 0.0, 1.0
+                row([(ix(t, "pg", k), 1.0), (u, -pmax)], -np.inf, 0.0)           # pg ≤ u·pmax
+                row([(ix(t, "pg", k), 1.0), (u, -pmin)], 0.0, np.inf)            # pg ≥ u·pmin
+                if t == 0:
+                    row([(du, 1.0), (u, -1.0)], -1.0, np.inf)
+                    row([(du, 1.0), (u, 1.0)], 1.0, np.inf)
+                else:
+                    pu = ix(t - 1, "u", uc_pos[k])
+                    row([(du, 1.0), (u, -1.0), (pu, 1.0)], 0.0, np.inf)
+                    row([(du, 1.0), (u, 1.0), (pu, -1.0)], 0.0, np.inf)
+            if ramp_pct is not None and t > 0:
+                lim = float(ramp_pct) / 100.0 * D["gen"][g]["pmax"][t] / base
+                row([(ix(t, "pg", k), 1.0), (ix(t - 1, "pg", k), -1.0)], -lim, lim)
             row([(ix(t, "d", k), 1.0), (ix(t, "pg", k), -1.0)], -pg0[k], np.inf)
             row([(ix(t, "d", k), 1.0), (ix(t, "pg", k), 1.0)], pg0[k], np.inf)
         for l in range(nl):
@@ -173,6 +200,8 @@ def solve_spec(spec: ModelSpec, window: Window, time_limit: float | None = None)
                 row([(ix(t, "dz", k), 1.0) for k in range(ns)], -np.inf, float(p["k"]))
         elif s.op_id == "switching_limit_total" and ns:
             row([(ix(t, "dz", k), 1.0) for t in range(T) for k in range(ns)], -np.inf, float(p["K"]))
+        elif s.op_id == "unit_commitment" and nu and not s.pending_fields:
+            row([(ix(t, "du", j), 1.0) for t in range(T) for j in range(nu)], -np.inf, float(p["max_switch"]))
         elif s.op_id == "section_limit":
             idxs = [br_ids.index(b) for b in (p.get("branches") or []) if b in br_ids]
             lim = float(p["limit_mw"]) / base
@@ -183,10 +212,18 @@ def solve_spec(spec: ModelSpec, window: Window, time_limit: float | None = None)
                     row(e, -lim, lim)
                 else:
                     row(e, -np.inf, lim)
+        elif s.op_id == "renewable_accommodation":
+            msgs.append("新能源消纳目标：断面里没有标注新能源机组（RENEWABLE 全为 0），该项不起作用。")
+        elif s.op_id == "reliability_nm1":
+            msgs.append("可靠性目标：失负荷代价按事故集由求解链展开，内置求解器不展开该项。")
         elif s.op_id in ("loss_min", "voltage_deviation"):
             msgs.append(f"{s.op_id}：直流近似下网损与电压偏差为 0，该目标项在本求解器中不起作用；需要交流求解链才有意义。")
         elif s.op_id not in ops.operators():
             msgs.append(f"{s.id}（{s.op_id}）是自定义算子，内置求解器不执行。")
+    if unit_cost:
+        msgs.append(f"经济性目标：发电成本单价 {unit_cost:g} 元/MWh（常数），目标值单位不再是纯 p.u.。")
+    if nu:
+        msgs.append(f"机组启停：{nu} 台机组 × {T} 时段加入 0-1 启停变量。")
     if sw_ids == [] and not fixed:
         msgs.append("可开断集合为空，按固定拓扑求解。")
     A = sp.csr_matrix((vals, (rows, cols)), shape=(nrow[0], N))
@@ -227,7 +264,13 @@ def solve_spec(spec: ModelSpec, window: Window, time_limit: float | None = None)
         pv = [float(X[ix(t, "p", l)] * base) for t in range(T)]
         if D["branch"][lid]["rate"][0] > 0 or any(abs(v) > 1e-6 for v in pv):
             flow[lid] = {"pf": [round(v, 4) for v in pv], "qf": [0.0] * T, "pt": [round(-v, 4) for v in pv], "qt": [0.0] * T}
+    gen_u = {}
+    for k, j in uc_pos.items():
+        arr = [int(round(X[ix(t, "u", j)])) for t in range(T)]
+        if any(a == 0 for a in arr):
+            gen_u[gen_ids[k]] = arr
     out.update({
+        "gen_u": gen_u,
         "branch_status": bs, "gen_p": changed if changed else {}, "gen_p_all": None,
         "bus_vm": {}, "branch_flow": flow,
     })

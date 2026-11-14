@@ -400,7 +400,7 @@ def test_formula_n1_block_follows_omega(ctx):
 def test_formula_objective_terms(ctx):
     s = StructuralOp(id="s-1", kind="objective", op_id="switching_penalty", params={"beta": None})
     f = build_formulas(mkspec(ctx, ss=[s]))
-    assert r"\beta" in f["objective"]["latex"] and f["objective"]["pending"]
+    assert r"\beta" in f["objective"]["latex"] and not f["objective"]["pending"]
 
 
 def test_codegen_markers_and_syntax(ctx):
