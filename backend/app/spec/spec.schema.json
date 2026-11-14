@@ -1,0 +1,514 @@
+{
+  "$defs": {
+    "BaseModelDef": {
+      "additionalProperties": false,
+      "description": "基础模型 ω。N−1 是 ω 的默认设置（任务书要求），s 只放 ω 之外的扩展。",
+      "properties": {
+        "system": {
+          "default": "dali_905",
+          "title": "System",
+          "type": "string"
+        },
+        "problem": {
+          "default": "multi_period_ac_ots",
+          "enum": [
+            "multi_period_ac_ots",
+            "multi_period_acopf"
+          ],
+          "title": "Problem",
+          "type": "string"
+        },
+        "periods": {
+          "default": 16,
+          "title": "Periods",
+          "type": "integer"
+        },
+        "step_min": {
+          "default": 15,
+          "title": "Step Min",
+          "type": "integer"
+        },
+        "n_minus_1": {
+          "default": true,
+          "title": "N Minus 1",
+          "type": "boolean"
+        },
+        "contingency_rule": {
+          "default": "meshed_in_service",
+          "title": "Contingency Rule",
+          "type": "string"
+        },
+        "switchable_rule": {
+          "default": "meshed_in_service",
+          "title": "Switchable Rule",
+          "type": "string"
+        }
+      },
+      "required": [
+        "system",
+        "problem",
+        "periods",
+        "step_min",
+        "n_minus_1",
+        "contingency_rule",
+        "switchable_rule"
+      ],
+      "title": "BaseModelDef",
+      "type": "object"
+    },
+    "DeltaPi": {
+      "additionalProperties": false,
+      "description": "参数修改 Δπ，一条一项。",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "component": {
+          "enum": [
+            "bus",
+            "gen",
+            "branch"
+          ],
+          "title": "Component",
+          "type": "string"
+        },
+        "target": {
+          "title": "Target",
+          "type": "string"
+        },
+        "param": {
+          "title": "Param",
+          "type": "string"
+        },
+        "operation": {
+          "anyOf": [
+            {
+              "enum": [
+                "scale",
+                "set",
+                "add"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Operation"
+        },
+        "direction": {
+          "anyOf": [
+            {
+              "enum": [
+                "increase",
+                "decrease",
+                "set_zero"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Direction"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "periods": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Periods",
+          "type": "array"
+        },
+        "source": {
+          "enum": [
+            "explicit",
+            "inferred"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "evidence": {
+          "default": "",
+          "title": "Evidence",
+          "type": "string"
+        },
+        "inference_chain": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Inference Chain"
+        },
+        "confirmed": {
+          "default": false,
+          "title": "Confirmed",
+          "type": "boolean"
+        },
+        "pending_fields": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Pending Fields",
+          "type": "array"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Origin"
+        }
+      },
+      "required": [
+        "id",
+        "component",
+        "target",
+        "param",
+        "operation",
+        "direction",
+        "value",
+        "periods",
+        "source",
+        "evidence",
+        "inference_chain",
+        "confirmed",
+        "pending_fields",
+        "origin"
+      ],
+      "title": "DeltaPi",
+      "type": "object"
+    },
+    "LevelOverride": {
+      "additionalProperties": false,
+      "properties": {
+        "level": {
+          "enum": [
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ],
+          "title": "Level",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "level",
+        "reason"
+      ],
+      "title": "LevelOverride",
+      "type": "object"
+    },
+    "SnapshotRef": {
+      "additionalProperties": false,
+      "description": "断面引用：每个时段所用断面文件。",
+      "properties": {
+        "source": {
+          "default": "node_txt",
+          "title": "Source",
+          "type": "string"
+        },
+        "system": {
+          "default": "dali_905",
+          "title": "System",
+          "type": "string"
+        },
+        "snapshot_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Snapshot Ids",
+          "type": "array"
+        },
+        "start": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start"
+        },
+        "periods": {
+          "default": 16,
+          "title": "Periods",
+          "type": "integer"
+        },
+        "step_min": {
+          "default": 15,
+          "title": "Step Min",
+          "type": "integer"
+        },
+        "single_snapshot": {
+          "default": false,
+          "title": "Single Snapshot",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source",
+        "system",
+        "snapshot_ids",
+        "start",
+        "periods",
+        "step_min",
+        "single_snapshot"
+      ],
+      "title": "SnapshotRef",
+      "type": "object"
+    },
+    "SolverReq": {
+      "additionalProperties": false,
+      "description": "求解要求 R。",
+      "properties": {
+        "solver": {
+          "default": "builtin",
+          "enum": [
+            "builtin",
+            "mock",
+            "ipopt",
+            "copt",
+            "gurobi",
+            "external"
+          ],
+          "title": "Solver",
+          "type": "string"
+        },
+        "time_limit_s": {
+          "default": 60,
+          "title": "Time Limit S",
+          "type": "integer"
+        },
+        "tolerance": {
+          "default": 1e-06,
+          "title": "Tolerance",
+          "type": "number"
+        },
+        "outputs": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Outputs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "solver",
+        "time_limit_s",
+        "tolerance",
+        "outputs"
+      ],
+      "title": "SolverReq",
+      "type": "object"
+    },
+    "StructuralOp": {
+      "additionalProperties": false,
+      "description": "结构修改 s。kind 对应 ProOPF 的 sp / sc / so。",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "problem",
+            "constraint",
+            "objective"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "op_id": {
+          "title": "Op Id",
+          "type": "string"
+        },
+        "params": {
+          "additionalProperties": true,
+          "title": "Params",
+          "type": "object"
+        },
+        "source": {
+          "default": "explicit",
+          "enum": [
+            "explicit",
+            "inferred"
+          ],
+          "title": "Source",
+          "type": "string"
+        },
+        "evidence": {
+          "default": "",
+          "title": "Evidence",
+          "type": "string"
+        },
+        "custom_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Custom Code"
+        },
+        "pending_fields": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Pending Fields",
+          "type": "array"
+        },
+        "origin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Origin"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "op_id",
+        "params",
+        "source",
+        "evidence",
+        "custom_code",
+        "pending_fields",
+        "origin"
+      ],
+      "title": "StructuralOp",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "integer"
+    },
+    "parent_version": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Version"
+    },
+    "change_reason": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Change Reason"
+    },
+    "instruction": {
+      "title": "Instruction",
+      "type": "string"
+    },
+    "snapshot": {
+      "$ref": "#/$defs/SnapshotRef"
+    },
+    "omega": {
+      "$ref": "#/$defs/BaseModelDef"
+    },
+    "delta_pi": {
+      "items": {
+        "$ref": "#/$defs/DeltaPi"
+      },
+      "title": "Delta Pi",
+      "type": "array"
+    },
+    "structural": {
+      "items": {
+        "$ref": "#/$defs/StructuralOp"
+      },
+      "title": "Structural",
+      "type": "array"
+    },
+    "solver_req": {
+      "$ref": "#/$defs/SolverReq"
+    },
+    "level_override": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/LevelOverride"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "task_id",
+    "version",
+    "parent_version",
+    "change_reason",
+    "instruction",
+    "snapshot",
+    "omega",
+    "delta_pi",
+    "structural",
+    "solver_req",
+    "level_override"
+  ],
+  "title": "ModelSpec",
+  "type": "object"
+}

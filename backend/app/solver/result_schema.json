@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "求解结果（import 与 external 共用）",
+  "description": "示例数组只写了几个元素，实际长度等于 periods。branch_status 可以只给有变化的支路，没给的按断面状态处理。",
+  "type": "object",
+  "required": ["status", "periods"],
+  "additionalProperties": true,
+  "properties": {
+    "status": {"enum": ["optimal", "feasible", "infeasible", "error", "mock"]},
+    "solver": {"type": "string"},
+    "objective": {"type": ["number", "null"]},
+    "periods": {"type": "integer", "minimum": 1},
+    "timings_s": {
+      "type": "object",
+      "properties": {
+        "read": {"type": ["number", "null"]},
+        "build": {"type": ["number", "null"]},
+        "solve": {"type": ["number", "null"]},
+        "n1_check": {"type": ["number", "null"]}
+      }
+    },
+    "branch_status": {
+      "type": "object",
+      "propertyNames": {"pattern": "^L[0-9]+$"},
+      "additionalProperties": {"type": "array", "items": {"enum": [0, 1]}}
+    },
+    "gen_p": {
+      "type": "object",
+      "propertyNames": {"pattern": "^G[0-9]+$"},
+      "additionalProperties": {"type": "array", "items": {"type": "number"}}
+    },
+    "bus_vm": {
+      "type": "object",
+      "propertyNames": {"pattern": "^B[0-9]+$"},
+      "additionalProperties": {"type": "array", "items": {"type": "number"}}
+    },
+    "branch_flow": {
+      "type": "object",
+      "propertyNames": {"pattern": "^L[0-9]+$"},
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "pf": {"type": "array", "items": {"type": "number"}},
+          "qf": {"type": "array", "items": {"type": "number"}},
+          "pt": {"type": "array", "items": {"type": "number"}},
+          "qt": {"type": "array", "items": {"type": "number"}}
+        }
+      }
+    },
+    "messages": {"type": "array", "items": {"type": "string"}}
+  }
+}

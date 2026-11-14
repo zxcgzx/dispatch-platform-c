@@ -1,0 +1,50 @@
+@import './tokens.css';
+
+* { box-sizing: border-box; }
+html, body, #app { height: 100%; margin: 0; }
+body {
+  font-family: var(--font-sans);
+  font-size: var(--fs-md);
+  color: var(--c-ink);
+  background: var(--c-bg);
+  -webkit-font-smoothing: antialiased;
+}
+code, pre, .mono { font-family: var(--font-mono); }
+a { color: var(--c-primary); text-decoration: none; }
+h1, h2, h3, h4 { margin: 0; font-weight: 600; }
+
+.card {
+  background: var(--c-surface);
+  border: 1px solid var(--c-hairline);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card-pad { padding: var(--sp-4); }
+.card-title { font-size: var(--fs-lg); font-weight: 600; margin-bottom: var(--sp-3); display: flex; align-items: center; gap: var(--sp-2); }
+.sub { color: var(--c-muted); font-size: var(--fs-sm); }
+.row { display: flex; align-items: center; gap: var(--sp-2); }
+.grow { flex: 1; min-width: 0; }
+.page { padding: var(--sp-4) var(--sp-5); max-width: 1500px; margin: 0 auto; }
+.page h2 { font-size: var(--fs-xl); margin-bottom: var(--sp-3); }
+.table-plain { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.table-plain th, .table-plain td { border-bottom: 1px solid var(--c-hairline); padding: 6px 8px; text-align: left; vertical-align: top; }
+.table-plain th { color: var(--c-muted); font-weight: 600; background: var(--c-surface-2); }
+
+/* 推断项：琥珀色 */
+.infer-row { background: var(--c-infer-bg) !important; }
+.infer-tag { color: var(--c-infer); border: 1px solid var(--c-infer-line); background: var(--c-infer-bg); border-radius: var(--radius-sm); padding: 0 6px; font-size: var(--fs-xs); }
+.custom-row { background: var(--c-custom) !important; }
+
+/* 校验级别色 */
+.lv-error { color: var(--c-danger); }
+.lv-warn { color: var(--c-warn); }
+.lv-info { color: var(--c-primary); }
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* 原文高亮 */
+mark.hl { background: var(--c-focus); color: inherit; padding: 0 1px; border-radius: 2px; }
+mark.hl-ent { background: var(--c-primary-bg); border-bottom: 2px solid var(--c-primary); }

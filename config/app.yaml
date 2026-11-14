@@ -1,0 +1,54 @@
+# 建模工作台全局配置（可修改；修改后重启后端生效）
+
+time:
+  periods: 16          # 时段数
+  step_min: 15         # 每时段分钟数
+
+thresholds:
+  overload_ratio: 0.8      # 负载率“重载”阈值（≥ 此值计入重载条数）
+  violation_ratio: 1.0     # 负载率“越限”阈值
+  isolating_net_load_note: true
+
+# 5.2 参数数值范围
+ranges:
+  scale_min_exclusive: 0.0     # scale ∈ (0, 3]
+  scale_max: 3.0
+  voltage_min: 0.8             # VMAX / VMIN ∈ [0.8, 1.2]
+  voltage_max: 1.2
+  status_values: [0, 1]
+
+# 目标系数 beta 默认值（算子 switching_penalty / loss_min / voltage_deviation 的 beta 为空时使用，并给警告）
+objective:
+  beta_default: 0.1
+
+# 事故集 / 可开断集合的默认规则
+rules:
+  contingency_rule_default: meshed_in_service
+  switchable_rule_default: meshed_in_service
+  contingency_rules:
+    all_in_service: 全部在运支路
+    meshed_in_service: 网状部分在运支路
+    meshed_kv_ge_110: 网状且 ≥110kV 在运支路
+  switchable_rules:
+    all_in_service: 全部在运支路
+    meshed_in_service: 网状部分在运支路
+    meshed_kv_ge_110: 网状且 ≥110kV 在运支路
+
+# 规格追问设置默认值
+questions:
+  ask_enabled: true
+  max_rounds: 3
+
+# 试构建（T = 1，跳过 B9）
+trial_build:
+  enabled: true
+  timeout_s: 60
+
+# 求解黑盒
+solver:
+  external_margin_s: 30     # 外部命令在 time_limit_s 之外多给的宽限
+
+# 课题 3 风险（本地规则模拟）
+risk:
+  high_reasons: [ρ≥100%, N-1 筛查不通过]
+  medium_reasons: [ρ≥80%, 电压越限]

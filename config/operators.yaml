@@ -1,0 +1,139 @@
+# 结构算子库 + 基础模型公式块（指令 5.3 / 6.4）
+# 每个算子带：名称、kind、参数定义、LaTeX 模板、代码模板。
+# 代码模板里 {name} 由程序按规格参数替换；算子库以外的结构修改只能走 custom_code（界面标黄待审）。
+
+# ---------------------------------------------------------------------------
+# 基础模型：多时段 AC-OTS。block 编号 B1–B9；affected_by 说明哪类修改会高亮该块
+# ---------------------------------------------------------------------------
+base:
+  objective:
+    id: OBJ
+    title: 目标（占位，待确认）
+    pending: true
+    note: 数据里没有发电成本，基础目标暂用“偏离当前方式最小”，其中机组参考出力取断面里的 PG。该条已写入 docs/ASSUMPTIONS.md，公式页标“待确认”。
+    latex: '\min \sum_{t\in\mathcal T}\sum_{g\in\mathcal G}\left(P^{G}_{g,t}-P^{G,0}_{g}\right)^{2}'
+  blocks:
+    - id: B1
+      title: 有功平衡
+      affected_by: [bus.PD]
+      latex: '\sum_{g\in\mathcal G_i}P^{G}_{g,t}-P^{D}_{i,t}-G^{s}_{i}V_{i,t}^{2}=\sum_{l\in\mathcal L^{f}_{i}}P^{f}_{l,t}+\sum_{l\in\mathcal L^{r}_{i}}P^{r}_{l,t}'
+    - id: B2
+      title: 无功平衡
+      affected_by: [bus.QD]
+      latex: '\sum_{g\in\mathcal G_i}Q^{G}_{g,t}-Q^{D}_{i,t}+B^{s}_{i}V_{i,t}^{2}=\sum_{l\in\mathcal L^{f}_{i}}Q^{f}_{l,t}+\sum_{l\in\mathcal L^{r}_{i}}Q^{r}_{l,t}'
+    - id: B3
+      title: 支路潮流与开断
+      affected_by: [branch.BR_STATUS]
+      latex: '\left|P^{f}_{l,t}-p^{f}_{l}(V,\theta)\right|\le M_{l}(1-z_{l,t}),\quad \left|P^{f}_{l,t}\right|\le M_{l}z_{l,t}'
+      note: Q^{f}、P^{r}、Q^{r} 同理；p^{f}_{l} 等用 MATPOWER π 型支路模型（含 TAP、SHIFT）
+    - id: B4
+      title: 热稳
+      affected_by: [branch.RATE_A]
+      latex: '\left(P^{f}_{l,t}\right)^{2}+\left(Q^{f}_{l,t}\right)^{2}\le z_{l,t}\,\bar S_{l}^{2}'
+      note: 末端同理；S̄_l 取 RATE_A，为 0 时不加
+    - id: B5
+      title: 电压
+      affected_by: [bus.VMAX, bus.VMIN]
+      latex: '\underline{V}_{i}\le V_{i,t}\le \overline{V}_{i}'
+    - id: B6
+      title: 机组
+      affected_by: [gen.PMAX, gen.PMIN, gen.GEN_STATUS]
+      latex: 'u_{g}\underline{P}_{g}\le P^{G}_{g,t}\le u_{g}\overline{P}_{g}'
+      note: 无功同理
+    - id: B7
+      title: 不可开断支路
+      affected_by: [branch.BR_STATUS]
+      latex: 'z_{l,t}=z^{0}_{l},\quad l\in\mathcal L\setminus\mathcal L^{s}'
+    - id: B8
+      title: 平衡节点
+      affected_by: []
+      latex: '\theta_{175,t}=0'
+    - id: B9
+      title: N−1 安全约束
+      condition: n_minus_1
+      abstract: true
+      affected_by: []
+      latex: '\forall c\in\mathcal C,\ t\in\mathcal T:\ x^{(c)}_{t}\in\mathcal F\left(z_{t}-e_{c}\right)'
+      note: 含义是“事故后状态满足潮流方程与限额”。展开形式由求解链定义，公式页只显示这一抽象块。
+
+# ---------------------------------------------------------------------------
+# 结构算子库
+# ---------------------------------------------------------------------------
+operators:
+  multi_period_acopf:
+    name: 固定拓扑（多时段 AC-OPF）
+    kind: problem
+    meaning: 不开断，固定拓扑
+    params: {}
+    latex: 'z_{l,t}=z^{0}_{l},\quad \forall l\in\mathcal L,\ t\in\mathcal T\quad(\text{去掉 0-1 变量})'
+    code: |
+      # 固定拓扑：可开断集合 LS 置空，z 取断面状态，不产生 0-1 变量（见 [OMEGA] 的 FIXED_TOPOLOGY）
+
+  switching_limit_per_period:
+    name: 每时段开关操作数上限
+    kind: constraint
+    meaning: 每时段开关操作数 ≤ k
+    params:
+      k: {type: int, min: 1, label: k（次/时段）}
+    latex: '\sum_{l\in\mathcal L^{s}}\left|z_{l,t}-z_{l,t-1}\right|\le {k},\ \forall t,\quad z_{l,0}=z^{0}_{l}'
+    code: |
+      def _sw_per_period_rule(m, t):
+          return sum(m.dz[l, t] for l in m.LS) <= {k}
+      m.sw_per_period = pyo.Constraint(m.T, rule=_sw_per_period_rule)
+
+  switching_limit_total:
+    name: 全部时段开关操作总数上限
+    kind: constraint
+    meaning: 全部时段开关操作总数 ≤ K
+    params:
+      K: {type: int, min: 1, label: K（次）}
+    latex: '\sum_{t}\sum_{l\in\mathcal L^{s}}\left|z_{l,t}-z_{l,t-1}\right|\le {K}'
+    code: |
+      m.sw_total = pyo.Constraint(expr=sum(m.dz[l, t] for l in m.LS for t in m.T) <= {K})
+
+  section_limit:
+    name: 断面有功限额
+    kind: constraint
+    meaning: 断面有功限额
+    params:
+      branches: {type: list_branch, label: 断面支路（L 编号）}
+      limit_mw: {type: float, min_exclusive: 0, label: 限额（MW）}
+      direction: {type: str, choices: [forward, reverse, abs], default: forward, label: 方向}
+    latex: '{dir_lhs}\le \bar P_{S}={limit_mw}\,\text{MW},\ \forall t,\quad S=\{{branches}\}'
+    code: |
+      SECTION = {branches_py}
+      SECTION_LIMIT = {limit_mw} / base_mva  # MW -> p.u.
+      def _section_rule(m, t):
+          s = sum(m.pf[l, t] for l in SECTION)
+          return {dir_expr}
+      m.section_limit = pyo.Constraint(m.T, rule=_section_rule)
+
+  switching_penalty:
+    name: 开关操作惩罚
+    kind: objective
+    meaning: 目标加开关操作惩罚
+    params:
+      beta: {type: float, min_exclusive: 0, nullable: true, label: β（空则用配置默认值并告警）}
+    latex: '+\ {beta}\sum_{t}\sum_{l\in\mathcal L^{s}}\left|z_{l,t}-z_{l,t-1}\right|'
+    code: |
+      obj_terms.append({beta} * sum(m.dz[l, t] for l in m.LS for t in m.T))
+
+  loss_min:
+    name: 网损最小
+    kind: objective
+    meaning: 目标加网损
+    params:
+      beta: {type: float, min_exclusive: 0, nullable: true, label: β（空则用配置默认值并告警）}
+    latex: '+\ {beta}\sum_{t}\sum_{l}\left(P^{f}_{l,t}+P^{r}_{l,t}\right)'
+    code: |
+      obj_terms.append({beta} * sum(m.pf[l, t] + m.pr[l, t] for l in m.L for t in m.T))
+
+  voltage_deviation:
+    name: 电压偏差
+    kind: objective
+    meaning: 目标加电压偏差
+    params:
+      beta: {type: float, min_exclusive: 0, nullable: true, label: β（空则用配置默认值并告警）}
+    latex: '+\ {beta}\sum_{t}\sum_{i}\left(V_{i,t}-1\right)^{2}'
+    code: |
+      obj_terms.append({beta} * sum((m.v[i, t] - 1.0) ** 2 for i in m.N for t in m.T))

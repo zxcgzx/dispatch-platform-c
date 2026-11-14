@@ -1,0 +1,74 @@
+# 演示规则引擎的知识表（界面“数据与接口 / 知识表”页可查看）
+# 推断链 = [触发词, 机理, 参数动作]；推断项的幅度不准猜，只能追问或由用户填写。
+# default_value：规程默认值（缩放系数 α）。现在全部留空；没配置时界面上“按规程默认值”按钮置灰。
+
+inference_rules:
+  - id: heat
+    name: 高温 → 线路热稳裕度下降
+    keywords: [极端高温, 持续高温, 高温, 酷热, 热稳限额下降, 热稳能力下降, 热稳裕度下降, 热稳限额降低]
+    event: 高温
+    event_keywords: [极端高温, 持续高温, 高温, 酷热]
+    mechanism: 热稳裕度下降
+    action: 调低 RATE_A
+    component: branch
+    param: RATE_A
+    direction: decrease
+    default_value: null
+  - id: gen_limit
+    name: 出力受限 → 机组可用出力下降
+    keywords: [出力受限, 降出力, 限出力, 来水不足, 缺煤, 可用出力下降, 出力下降]
+    event: 出力受限
+    event_keywords: [出力受限, 降出力, 限出力, 来水不足, 缺煤]
+    mechanism: 机组可用出力下降
+    action: 调低 PMAX
+    component: gen
+    param: PMAX
+    direction: decrease
+    default_value: null
+  - id: load_up
+    name: 负荷偏高 → 负荷上升
+    keywords: [负荷偏高, 负荷增长, 负荷上升, 负荷增加, 负荷较高]
+    event: 负荷偏高
+    event_keywords: [负荷偏高, 负荷增长, 负荷较高]
+    mechanism: 负荷上升
+    action: 调高 PD
+    component: bus
+    param: PD
+    direction: increase
+    default_value: null
+
+# 明确项：检修、停运类（设备退出，明确项，value = 0）
+outage_keywords: [检修, 停运, 退出运行, 退运, 停电检修]
+
+# 结构修改关键词
+structural_rules:
+  switching_penalty:
+    keywords: [少动开关, 减少开关操作, 尽量少动开关, 尽量少开断, 少开断, 开关操作尽量少]
+  switching_limit:
+    pattern: 开关操作.{0,6}?不超过\s*(\d+)\s*次
+    total_words: [全天, 总共, 一共, 累计, 共计, 全部时段内]
+  section_limit:
+    keywords: [断面]
+  loss_min:
+    keywords: [网损]
+  voltage_deviation:
+    keywords: [电压偏差, 电压质量]
+  fixed_topology:
+    keywords: [不开断, 固定拓扑, 不允许开断, 不改变拓扑]
+
+# N-1
+n_minus_1:
+  positive_pattern: N\s*[-−–—]\s*1
+  negative_words: [不考虑, 不需要, 无需, 不用, 不满足]
+
+# 数值词
+magnitude_words:
+  up: [提高, 增加, 增大, 上调, 上升, 提升, 调高, 升高, 增长]
+  down: [降低, 减少, 下降, 下调, 调低, 减小, 降]
+  set: [设为, 设置为, 设定为, 调整为, 限制为, 限额为, 改为]
+
+# 模糊时间词：一律追问（选项按钮列出 16 个时段对应的钟点）
+fuzzy_time_words: [午高峰, 早高峰, 晚高峰, 高峰, 午后, 下午, 上午, 晚上, 夜间, 凌晨, 中午, 傍晚, 清晨, 早晨, 明天, 明日, 今天, 今日, 近期, 当天, 近日, 近几天]
+
+# 全部时段
+all_period_words: [全天, 所有时段, 全部时段, 每个时段, 各时段, 每时段, 整个时段, 全时段]

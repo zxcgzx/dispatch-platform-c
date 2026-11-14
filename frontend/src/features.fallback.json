@@ -1,0 +1,426 @@
+{
+ "status_labels": {
+  "implemented": "已实现",
+  "blackbox": "黑盒",
+  "reserved": "接口预留",
+  "todo": "待开发"
+ },
+ "modules": {
+  "M1": "输入与场景",
+  "M2": "语义解析与层级判定",
+  "M3": "模型规格与方程确认",
+  "M4": "去幻觉与校验",
+  "M5": "求解",
+  "M6": "结果与地图",
+  "M7": "风险评估与动态调整",
+  "M8": "测评模式",
+  "M9": "问题分解与多智能体"
+ },
+ "features": [
+  {
+   "id": "m1.instruction",
+   "module": "M1",
+   "module_name": "输入与场景",
+   "name": "文本指令输入",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "自然语言调度指令输入，生成任务记录"
+  },
+  {
+   "id": "m1.templates",
+   "module": "M1",
+   "module_name": "输入与场景",
+   "name": "场景模板",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "检修、高温限额下降、负荷增长、开关次数限制、断面限额"
+  },
+  {
+   "id": "m1.snapshot",
+   "module": "M1",
+   "module_name": "输入与场景",
+   "name": "断面选择",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "断面库按时刻排序，取 16 个间隔 15 分钟的最近断面；单断面时复制成 16 时段"
+  },
+  {
+   "id": "m1.model_select",
+   "module": "M1",
+   "module_name": "输入与场景",
+   "name": "模型与提问设置",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "演示规则引擎 / 本地 Qwen；是否追问与最多追问轮数"
+  },
+  {
+   "id": "m1.voice",
+   "module": "M1",
+   "module_name": "输入与场景",
+   "name": "语音输入",
+   "status": "todo",
+   "status_label": "待开发",
+   "note": "任务书的具身智能样机要求调度指令语音交互"
+  },
+  {
+   "id": "m1.tp_data",
+   "module": "M1",
+   "module_name": "输入与场景",
+   "name": "测点 ↔ 节点转换（模拟测点）",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "节点 → 模拟测点（母线 / 变压器 / 开关 / 连接线路）、静态动态表、逆向恢复与往返验证；真实测点接入待课题 2 提供映射与字段字典"
+  },
+  {
+   "id": "m1.llm_t2",
+   "module": "M1",
+   "module_name": "输入与场景",
+   "name": "课题 2 大模型",
+   "status": "reserved",
+   "status_label": "接口预留",
+   "note": "OpenAI 兼容对话接口，输出规格 JSON"
+  },
+  {
+   "id": "m1.llm_proopf",
+   "module": "M1",
+   "module_name": "输入与场景",
+   "name": "ProOPF 微调模型",
+   "status": "reserved",
+   "status_label": "接口预留",
+   "note": "微调 Qwen3-30B-A3B，部署后以 OpenAI 兼容接口接入"
+  },
+  {
+   "id": "m2.entities",
+   "module": "M2",
+   "module_name": "语义解析与层级判定",
+   "name": "实体解析与原文高亮",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "母线、支路、机组、时段、数值；点一下在原文高亮依据"
+  },
+  {
+   "id": "m2.level",
+   "module": "M2",
+   "module_name": "语义解析与层级判定",
+   "name": "L1–L4 判级",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "由程序从规格推出，不信大模型自报；可人工改选并留痕"
+  },
+  {
+   "id": "m2.chain",
+   "module": "M2",
+   "module_name": "语义解析与层级判定",
+   "name": "推断链",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "事件 → 机理 → 参数；推断项必须人工确认"
+  },
+  {
+   "id": "m2.ask",
+   "module": "M2",
+   "module_name": "语义解析与层级判定",
+   "name": "追问",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "对象、时段、幅度不明确时追问，给选项按钮"
+  },
+  {
+   "id": "m2.ext_model",
+   "module": "M2",
+   "module_name": "语义解析与层级判定",
+   "name": "外部建模引擎接入",
+   "status": "reserved",
+   "status_label": "接口预留",
+   "note": "动态建模：可接入外部解析服务，输出规格 Δπ / s"
+  },
+  {
+   "id": "m3.spec",
+   "module": "M3",
+   "module_name": "模型规格与方程确认",
+   "name": "规格编辑",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "ω、Δπ、s、R 四块可编辑表单"
+  },
+  {
+   "id": "m3.formula",
+   "module": "M3",
+   "module_name": "模型规格与方程确认",
+   "name": "公式渲染",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "基础模型 B1–B9 逐块渲染，改动块高亮"
+  },
+  {
+   "id": "m3.code",
+   "module": "M3",
+   "module_name": "模型规格与方程确认",
+   "name": "代码生成",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "规格 → Pyomo 代码，带标记，与规格行双向跳转"
+  },
+  {
+   "id": "m3.scale",
+   "module": "M3",
+   "module_name": "模型规格与方程确认",
+   "name": "规模估算",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "变量数、0-1 变量数、约束数；三种可开断集合口径并列"
+  },
+  {
+   "id": "m3.trial",
+   "module": "M3",
+   "module_name": "模型规格与方程确认",
+   "name": "试构建",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "子进程执行同一份代码（T = 1，不含 N−1），限时 60 秒"
+  },
+  {
+   "id": "m3.versions",
+   "module": "M3",
+   "module_name": "模型规格与方程确认",
+   "name": "版本管理",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "规格版本链与差异比对"
+  },
+  {
+   "id": "m4.checks",
+   "module": "M4",
+   "module_name": "去幻觉与校验",
+   "name": "五层校验",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "规格合法 / 结构一致 / 数据检查 / 可执行 / 语义回译"
+  },
+  {
+   "id": "m4.ext_check",
+   "module": "M4",
+   "module_name": "去幻觉与校验",
+   "name": "外部去幻觉校验接入",
+   "status": "reserved",
+   "status_label": "接口预留",
+   "note": "外部校验结果并入第 5 层"
+  },
+  {
+   "id": "m4.iis",
+   "module": "M4",
+   "module_name": "去幻觉与校验",
+   "name": "冲突定位（IIS）",
+   "status": "todo",
+   "status_label": "待开发",
+   "note": "需要求解器支持，求解不可行时给出冲突与允许调整项"
+  },
+  {
+   "id": "m5.solve",
+   "module": "M5",
+   "module_name": "求解",
+   "name": "求解",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "内置 HiGHS（直流近似 OTS）真实求解；mock / 导入结果 / 外部命令（接现有求解链）可切换；不做求解加速"
+  },
+  {
+   "id": "m5.import",
+   "module": "M5",
+   "module_name": "求解",
+   "name": "结果导入",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "上传结果 JSON，按 result_schema.json 校验后作为该版本结果"
+  },
+  {
+   "id": "m5.external",
+   "module": "M5",
+   "module_name": "求解",
+   "name": "外部求解器",
+   "status": "reserved",
+   "status_label": "接口预留",
+   "note": "SOLVER_CMD 命令适配框架，后续接 905 节点 IPOPT 求解链"
+  },
+  {
+   "id": "m6.matrix",
+   "module": "M6",
+   "module_name": "结果与地图",
+   "name": "开断矩阵",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "时段 × 支路，断开格子着色"
+  },
+  {
+   "id": "m6.gen",
+   "module": "M6",
+   "module_name": "结果与地图",
+   "name": "出力曲线",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "机组 16 时段出力，越界标红"
+  },
+  {
+   "id": "m6.topo",
+   "module": "M6",
+   "module_name": "结果与地图",
+   "name": "拓扑网架图",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "905 节点 / 1000 支路，坐标后端预算，按电压等级与负载率着色"
+  },
+  {
+   "id": "m6.compare",
+   "module": "M6",
+   "module_name": "结果与地图",
+   "name": "前后对比",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "调整前（断面）与调整后（结果）并排，只列差异项"
+  },
+  {
+   "id": "m6.geomap",
+   "module": "M6",
+   "module_name": "结果与地图",
+   "name": "地理地图",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "大理州真实行政区划底图叠加网架；变电站落点按拓扑分区示意，待大理地理坐标后精确定位"
+  },
+  {
+   "id": "m6.writeback",
+   "module": "M6",
+   "module_name": "结果与地图",
+   "name": "结果回写测点",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "把开断方案映射为虚拟开关动作清单；现场设备执行待课题 2 提供真实控制点关联规则"
+  },
+  {
+   "id": "m7.loadrate",
+   "module": "M7",
+   "module_name": "风险评估与动态调整",
+   "name": "负载率指标",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "最大值、平均值、≥80%、≥100% 条数"
+  },
+  {
+   "id": "m7.voltage",
+   "module": "M7",
+   "module_name": "风险评估与动态调整",
+   "name": "电压偏移指标",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "最大值、平均值、越限母线数"
+  },
+  {
+   "id": "m7.n1",
+   "module": "M7",
+   "module_name": "风险评估与动态调整",
+   "name": "N−1 直流筛查",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "PTDF / LODF 直流近似筛查，非交流 N−1 校核"
+  },
+  {
+   "id": "m7.vsm",
+   "module": "M7",
+   "module_name": "风险评估与动态调整",
+   "name": "静态电压稳定裕度",
+   "status": "todo",
+   "status_label": "待开发",
+   "note": "需要连续潮流"
+  },
+  {
+   "id": "m7.renewable",
+   "module": "M7",
+   "module_name": "风险评估与动态调整",
+   "name": "新能源消纳率",
+   "status": "todo",
+   "status_label": "待开发",
+   "note": "数据中没有新能源机组信息，暂不计算"
+  },
+  {
+   "id": "m7.risk",
+   "module": "M7",
+   "module_name": "风险评估与动态调整",
+   "name": "课题 3 风险评估",
+   "status": "reserved",
+   "status_label": "接口预留",
+   "note": "配置 RISK_ENDPOINT 后调用；未配置时用本地规则模拟"
+  },
+  {
+   "id": "m7.negotiate",
+   "module": "M7",
+   "module_name": "风险评估与动态调整",
+   "name": "协商调整",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "按风险原因生成待确认的 Δπ / s 建议，生成新版本"
+  },
+  {
+   "id": "m7.reward",
+   "module": "M7",
+   "module_name": "风险评估与动态调整",
+   "name": "Reward 反馈",
+   "status": "reserved",
+   "status_label": "接口预留",
+   "note": "对应任务 3 的安全强化学习，中期之后部署"
+  },
+  {
+   "id": "m8.testmode",
+   "module": "M8",
+   "module_name": "测评模式",
+   "name": "测评模式",
+   "status": "implemented",
+   "status_label": "已实现",
+   "note": "批量跑 解析 → 判级 → 校验，规格级比对，导出报告"
+  },
+  {
+   "id": "m8.objective",
+   "module": "M8",
+   "module_name": "测评模式",
+   "name": "目标值比对测评",
+   "status": "todo",
+   "status_label": "待开发",
+   "note": "等求解接入后做，ProOPF 以求解目标值判对错"
+  },
+  {
+   "id": "m9.decompose",
+   "module": "M9",
+   "module_name": "问题分解与多智能体",
+   "name": "问题分解（任务 2）",
+   "status": "todo",
+   "status_label": "待开发",
+   "note": "问题类型识别、分解策略选择、子问题网络"
+  },
+  {
+   "id": "m9.multiagent",
+   "module": "M9",
+   "module_name": "问题分解与多智能体",
+   "name": "多智能体协同（任务 4）",
+   "status": "todo",
+   "status_label": "待开发",
+   "note": "子问题智能体、边端协同、全局收敛"
+  },
+  {
+   "id": "m9.knowledge",
+   "module": "M9",
+   "module_name": "问题分解与多智能体",
+   "name": "知识库",
+   "status": "todo",
+   "status_label": "待开发",
+   "note": "建模规则与调度规程知识库"
+  },
+  {
+   "id": "host.embed",
+   "module": "M1",
+   "module_name": "输入与场景",
+   "name": "宿主平台嵌入",
+   "status": "reserved",
+   "status_label": "接口预留",
+   "note": "/embed/workbench 已可 iframe 嵌入；账号与风格对齐待博文老师侧确认"
+  }
+ ]
+}

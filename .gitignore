@@ -1,0 +1,21 @@
+# 运行产物 / 缓存
+runs/
+.env
+.scratch/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+frontend/node_modules/
+*.sqlite
+# 个人资料、会议材料、原始大文件（不公开）
+905节点计算/
+905节点计算.zip
+参考资料/
+*.pptx
+*.docx
+*.pdf
+*.zip
+2030大理智能体讨论群聊天记录.md
+三家Logo.png
+建模工作台_ClaudeCode开发指令.md
